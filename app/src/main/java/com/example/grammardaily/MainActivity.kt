@@ -1,7 +1,6 @@
 package com.example.grammardaily
 
 import android.Manifest
-import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -23,14 +22,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import com.example.grammardaily.data.GrammarCurriculum
 import com.example.grammardaily.data.Placement
 import com.example.grammardaily.data.ProgressStore
+import com.example.grammardaily.data.QuestionBank
 import com.example.grammardaily.notify.ReminderWorker
 import com.example.grammardaily.ui.AppScreen
 import com.example.grammardaily.ui.HomeScreen
 import com.example.grammardaily.ui.LessonScreen
 import com.example.grammardaily.ui.QuizScreen
+import com.example.grammardaily.ui.ReviewScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -82,17 +82,21 @@ fun AppRoot() {
                     onExtraPractice = { topic ->
                         screen = AppScreen.TopicPractice(
                             topic = topic,
-                            questions = GrammarCurriculum.questionsForTopic(topic.id).shuffled()
+                            daily = false,
+                            questions = QuestionBank.byTopic(topic.id).shuffled()
                         )
-                    }
+                    },
+                    onStartReview = { topics -> screen = AppScreen.Review(topics) }
                 )
 
                 is AppScreen.Placement -> QuizScreen(
                     title = "Full grammar test",
                     questions = remember { Placement.testQuestions() },
-                    subtitle = "Answer without help \u2014 your score decides the level where training starts.",
-                    onDone = { correct, _ ->
-                        ProgressStore.markPlacement(Placement.levelForScore(correct), context)
+                    subtitle = "Trap answers included \u2014 answer honestly to land at the level where you will actually learn.",
+                    passFraction = 1.0,
+                    showHints = false,
+                    onDone = { _, _, answers ->
+                        ProgressStore.markPlacement(Placement.levelFromAnswers(answers), context)
                         goHome()
                     },
                     onExit = { goHome() }
@@ -104,17 +108,31 @@ fun AppRoot() {
                     onStartPractice = { topic ->
                         screen = AppScreen.TopicPractice(
                             topic = topic,
-                            questions = GrammarCurriculum.questionsForTopic(topic.id).shuffled()
+                            daily = true,
+                            questions = QuestionBank.byTopic(topic.id)
+                                .take(LESSON_QUESTIONS)
+                                .shuffled()
                         )
                     }
                 )
 
                 is AppScreen.TopicPractice -> QuizScreen(
                     title = current.topic.title,
-                    questions = remember(current.questions) { current.questions },
-                    subtitle = "Get 2 of 3 right to master this lesson.",
-                    onDone = { correct, total ->
-                        recordPractice(context, current.topic.id, correct, total)
+                    questions = current.questions,
+                    subtitle = if (current.daily)
+                        "Pass 4 of 5 and the spaced reviews for this lesson begin."
+                    else
+                        "Extra practice \u2014 hints help you learn; nothing is at stake.",
+                    passFraction = LESSON_PASS_FRACTION,
+                    showHints = true,
+                    onDone = { _, total, answers ->
+                        if (current.daily && total > 0 &&
+                            answers.count { it }.toDouble() / total >= LESSON_PASS_FRACTION
+                        ) {
+                            ProgressStore.recordLesson(context, current.topic.id)
+                        } else {
+                            ProgressStore.recordStreakOnly(context)
+                        }
                         goHome()
                     },
                     onExit = { goHome() }
@@ -122,25 +140,29 @@ fun AppRoot() {
 
                 is AppScreen.LevelUpTest -> QuizScreen(
                     title = "Level-up test",
-                    questions = remember(current.questions) { current.questions },
-                    subtitle = "Answer at least 4 of 6 correctly to move up a level.",
-                    onDone = { correct, total ->
-                        if (correct * 2 >= total) {
+                    questions = current.questions,
+                    subtitle = "Hard questions \u2014 you need 6 of 8 to move up.",
+                    passFraction = LEVEL_UP_PASS_FRACTION,
+                    showHints = false,
+                    onDone = { _, _, answers ->
+                        if (answers.count { it } >= LEVEL_UP_MIN_CORRECT) {
                             ProgressStore.levelUp(context)
                         }
                         goHome()
                     },
                     onExit = { goHome() }
                 )
+
+                is AppScreen.Review -> ReviewScreen(
+                    topics = current.topics,
+                    onFinished = { goHome() }
+                )
             }
         }
     }
 }
 
-private fun recordPractice(context: Context, topicId: String, correct: Int, total: Int) {
-    ProgressStore.recordQuizResult(context)
-    if (total > 0 && correct * 3 >= total * 2) {
-        ProgressStore.markTopicMastered(context, topicId)
-        ProgressStore.markTodayLesson(context, topicId)
-    }
-}
+private const val LESSON_QUESTIONS = 5
+private const val LESSON_PASS_FRACTION = 4.0 / 5
+private const val LEVEL_UP_MIN_CORRECT = 6
+private const val LEVEL_UP_PASS_FRACTION = 6.0 / 8

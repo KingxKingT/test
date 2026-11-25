@@ -7,9 +7,11 @@ data class ProgressState(
     val placementDone: Boolean,
     val level: Level,
     val masteredTopicIds: Set<String>,
+    val activeBoxTopicIds: Set<String>,
     val todayLessonTopicId: String?,
     val todayLessonDone: Boolean,
     val lessonDoneTopicId: String?,
+    val dueReviewTopics: List<Topic>,
     val streakDays: Int,
     val allMasteredFinished: Boolean
 )
@@ -19,98 +21,192 @@ object ProgressStore {
     private const val PREFS = "grammar_daily"
     private const val KEY_PLACED = "placement_done"
     private const val KEY_LEVEL = "level_index"
+    private const val KEY_BOXES = "topic_boxes"
+    private const val KEY_DUE = "topic_due"
     private const val KEY_MASTERED = "mastered_topics"
     private const val KEY_LESSON_DATE = "lesson_date"
     private const val KEY_LESSON_TOPIC = "lesson_topic_id"
     private const val KEY_STREAK = "streak_days"
     private const val KEY_LAST_STUDY = "last_study_date"
 
+    private const val MASTERY_BOX = 4
+    private val REVIEW_INTERVALS = mapOf(1 to 1L, 2 to 3L, 3 to 7L)
+
     fun readState(context: Context): ProgressState {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val prefs = prefs(context)
         val placed = prefs.getBoolean(KEY_PLACED, false)
         val level = Level.fromIndex(prefs.getInt(KEY_LEVEL, 0))
-        val mastered = prefs.getStringSet(KEY_MASTERED, emptySet())?.toSet() ?: emptySet()
-        val today = LocalDate.now().toString()
+        val boxes = readBoxes(prefs)
+        val due = readDue(prefs)
+        val mastered = boxes.filterValues { it >= MASTERY_BOX }.keys
+        val today = LocalDate.now()
         val lessonDate = prefs.getString(KEY_LESSON_DATE, null)
         val lessonTopic = prefs.getString(KEY_LESSON_TOPIC, null)
-        val todayDone = lessonDate == today && lessonTopic != null
-        val nextTopic = GrammarCurriculum.nextTopic(level, mastered)
-        val levelMastered = GrammarCurriculum.levelIsMastered(level, mastered)
+        val todayDone = lessonDate == today.toString() && lessonTopic != null
+        val dueTopics = due.entries
+            .filter { it.value <= today && boxes[it.key] ?: 0 < MASTERY_BOX }
+            .keys
+            .sortedBy { (boxes[it] ?: 0) }
+            .mapNotNull { id -> findTopic(id) }
+        val pool = GrammarCurriculum.topicsByLevel[level].orEmpty()
+        val lessonTopicNext = pool.firstOrNull {
+            it.id !in mastered && (boxes[it.id] ?: 0) == 0
+        }
         return ProgressState(
             placementDone = placed,
             level = level,
             masteredTopicIds = mastered,
-            todayLessonTopicId = if (!placed) null else nextTopic?.id,
+            activeBoxTopicIds = boxes.filterValues { it in 1 until MASTERY_BOX }.keys,
+            todayLessonTopicId = if (!placed) null else lessonTopicNext?.id,
             todayLessonDone = todayDone,
             lessonDoneTopicId = if (todayDone) lessonTopic else null,
+            dueReviewTopics = dueTopics,
             streakDays = prefs.getInt(KEY_STREAK, 0),
-            allMasteredFinished = level == Level.C1 && levelMastered
+            allMasteredFinished = level == Level.C1 &&
+                GrammarCurriculum.levelIsMastered(level, masteredList(prefs))
         )
     }
 
+    private fun masteredList(prefs: android.content.SharedPreferences): Set<String> =
+        readBoxes(prefs).filterValues { it >= MASTERY_BOX }.keys
+
     fun markPlacement(level: Level, context: Context) {
-        prefs(context).edit()
+        val p = prefs(context)
+        p.edit()
             .putBoolean(KEY_PLACED, true)
             .putInt(KEY_LEVEL, level.ordinal)
+            .remove(KEY_BOXES)
+            .remove(KEY_DUE)
+            .remove(KEY_MASTERED)
             .remove(KEY_LESSON_DATE)
             .remove(KEY_LESSON_TOPIC)
             .apply()
     }
 
-    fun recordQuizResult(context: Context) {
-        val prefs = prefs(context)
+    fun recordLesson(context: Context, topicId: String) {
+        val p = prefs(context)
         val today = LocalDate.now()
-        val last = prefs.getString(KEY_LAST_STUDY, null)?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
-        val newStreak = when (last) {
-            today -> prefs.getInt(KEY_STREAK, 0)
-            today.minusDays(1) -> prefs.getInt(KEY_STREAK, 0) + 1
+        val boxes = readBoxes(p).toMutableMap()
+        boxes[topicId] = 1
+        val due = readDue(p).toMutableMap()
+        due[topicId] = today.plusDays(1)
+        val last = p.getString(KEY_LAST_STUDY, null)?.let {
+            runCatching { LocalDate.parse(it) }.getOrNull()
+        }
+        val streak = when (last) {
+            today -> p.getInt(KEY_STREAK, 0)
+            today.minusDays(1) -> p.getInt(KEY_STREAK, 0) + 1
             else -> 1
         }
-        prefs.edit()
-            .putInt(KEY_STREAK, newStreak)
+        p.edit()
+            .putStringSet(KEY_BOXES, boxes.map { "${it.key}:${it.value}" }.toSet())
+            .putStringSet(KEY_DUE, due.map { "${it.key}:${it.value}" }.toSet())
+            .putString(KEY_LESSON_DATE, today.toString())
+            .putString(KEY_LESSON_TOPIC, topicId)
+            .putInt(KEY_STREAK, streak)
             .putString(KEY_LAST_STUDY, today.toString())
             .apply()
     }
 
-    fun markTopicMastered(context: Context, topicId: String) {
-        val prefs = prefs(context)
-        val mastered = prefs.getStringSet(KEY_MASTERED, emptySet())?.toSet() ?: emptySet()
-        prefs.edit()
-            .putStringSet(KEY_MASTERED, mastered + topicId)
+    fun markReviewCorrect(context: Context, topicId: String): Boolean {
+        val p = prefs(context)
+        val boxes = readBoxes(p).toMutableMap()
+        val newBox = (boxes[topicId] ?: 0) + 1
+        boxes[topicId] = newBox
+        val due = readDue(p).toMutableMap()
+        val mastered = p.getStringSet(KEY_MASTERED, emptySet())?.toSet() ?: emptySet()
+        var becameMastered = false
+        if (newBox >= MASTERY_BOX) {
+            due.remove(topicId)
+            p.edit().putStringSet(KEY_MASTERED, mastered + topicId).apply()
+            becameMastered = true
+        } else {
+            due[topicId] = LocalDate.now().plusDays(REVIEW_INTERVALS[newBox] ?: 2L)
+        }
+        val last = p.getString(KEY_LAST_STUDY, null)?.let {
+            runCatching { LocalDate.parse(it) }.getOrNull()
+        }
+        val today = LocalDate.now()
+        val streak = when (last) {
+            today -> p.getInt(KEY_STREAK, 0)
+            today.minusDays(1) -> p.getInt(KEY_STREAK, 0) + 1
+            else -> 1
+        }
+        p.edit()
+            .putStringSet(KEY_BOXES, boxes.map { "${it.key}:${it.value}" }.toSet())
+            .putStringSet(KEY_DUE, due.map { "${it.key}:${it.value}" }.toSet())
+            .putInt(KEY_STREAK, streak)
+            .putString(KEY_LAST_STUDY, today.toString())
             .apply()
+        return becameMastered
     }
 
-    fun markTodayLesson(context: Context, topicId: String) {
-        prefs(context).edit()
-            .putString(KEY_LESSON_DATE, LocalDate.now().toString())
-            .putString(KEY_LESSON_TOPIC, topicId)
+    fun recordStreakOnly(context: Context) {
+        val p = prefs(context)
+        val today = LocalDate.now()
+        val last = p.getString(KEY_LAST_STUDY, null)?.let {
+            runCatching { LocalDate.parse(it) }.getOrNull()
+        }
+        val streak = when (last) {
+            today -> p.getInt(KEY_STREAK, 0)
+            today.minusDays(1) -> p.getInt(KEY_STREAK, 0) + 1
+            else -> 1
+        }
+        p.edit()
+            .putInt(KEY_STREAK, streak)
+            .putString(KEY_LAST_STUDY, today.toString())
             .apply()
     }
 
     fun levelUp(context: Context) {
-        val prefs = prefs(context)
-        val current = Level.fromIndex(prefs.getInt(KEY_LEVEL, 0))
-        current.next?.let { prefs.edit().putInt(KEY_LEVEL, it.ordinal).apply() }
+        val p = prefs(context)
+        val current = Level.fromIndex(p.getInt(KEY_LEVEL, 0))
+        current.next?.let { p.edit().putInt(KEY_LEVEL, it.ordinal).apply() }
     }
 
     fun reminderMessage(context: Context): Pair<String, String>? {
         val state = readState(context)
         return when {
             !state.placementDone ->
-                "Find your English level" to "Take the 20-question grammar test in Grammar Daily \u2014 it takes 5 minutes."
-            state.allMasteredFinished ->
-                "Grammar walker \u2713" to "You have mastered every lesson in the app. Time for real-world reading!"
-            state.todayLessonDone ->
-                "Quick review: ${state.level.code}" to "Lesson done today. Your streak: ${state.streakDays} days. Keep the flame!"
+                "Find your English level" to "Take the 25-question grammar test in Grammar Daily \u2014 it takes 5 minutes."
+            state.dueReviewTopics.isNotEmpty() -> {
+                val topic = state.dueReviewTopics.first()
+                "Review due: ${topic.title}" to topic.tip
+            }
+            state.todayLessonDone && state.todayLessonTopicId == null ->
+                "Grammar Daily" to "Streak: ${state.streakDays} days. See you tomorrow for the next lesson!"
             else -> {
-                val topic = GrammarCurriculum.nextTopic(state.level, state.masteredTopicIds)
-                    ?: return null
-                subjectLine(topic) to topic.tip
+                val topic = state.todayLessonTopicId?.let { findTopic(it) } ?: return null
+                "Today: ${topic.title}" to topic.tip
             }
         }
     }
 
-    private fun subjectLine(topic: Topic): String = "Today: ${topic.title}"
+    private fun findTopic(id: String): Topic? =
+        GrammarCurriculum.topicsByLevel.values.flatten().firstOrNull { it.id == id }
 
-    private fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    private fun readBoxes(prefs: android.content.SharedPreferences): Map<String, Int> =
+        decodeIntMap(prefs.getStringSet(KEY_BOXES, emptySet()))
+
+    private fun readDue(prefs: android.content.SharedPreferences): Map<String, LocalDate> =
+        decodeStringMap(prefs.getStringSet(KEY_DUE, emptySet()))
+            .mapValues { runCatching { LocalDate.parse(it.value) }.getOrDefault(LocalDate.MIN) }
+
+    private fun decodeStringMap(raw: Set<String>?): Map<String, String> =
+        raw.orEmpty().mapNotNull { entry ->
+            val idx = entry.lastIndexOf(':')
+            if (idx <= 0) return@mapNotNull null
+            entry.substring(0, idx) to entry.substring(idx + 1)
+        }.toMap()
+
+    private fun decodeIntMap(raw: Set<String>?): Map<String, Int> =
+        raw.orEmpty().mapNotNull { entry ->
+            val idx = entry.lastIndexOf(':')
+            if (idx <= 0) return@mapNotNull null
+            val v = entry.substring(idx + 1).toIntOrNull() ?: return@mapNotNull null
+            entry.substring(0, idx) to v
+        }.toMap()
+
+    private fun prefs(context: Context) =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 }

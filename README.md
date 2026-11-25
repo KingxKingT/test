@@ -5,20 +5,24 @@ teaches you one grammar lesson every day until you have mastered the whole path.
 
 ## How it works
 
-1. **Full grammar test** — 20 multiple-choice questions that climb from Beginner (A1)
-   to Advanced (C1). Your score sets your starting level.
-2. **One lesson per day** — each lesson explains a topic (explanation, examples, a
-   memory tip) and ends with a 3-question practice round. Score 2/3 or better and the
-   topic is marked as mastered.
-3. **Level-up test** — when all 4 topics of a level are mastered, a 6-question test
-   moves you up (A1 → A2 → B1 → B2 → C1).
-4. **Reminders that never sleep** — a WorkManager job fires a notification with a
-   micro-review (the current lesson's memory tip) roughly every 2 hours, and the
-   **home-screen widget** always shows your level, streak, today's lesson and
-   progress. Tapping it opens the app. Even on days with no lesson done, the widget
-   and notifications keep nudging you so you don't forget what you learned.
-5. **Streaks** — study on consecutive days and the streak counter (in the app and on
-   the widget) keeps you going.
+1. **Full grammar test (harder)** — 25 questions in 5 difficulty bands (A1→C1),
+   4 options each, with trap distractors that catch guessing (e.g. "Did you went…?",
+   "Never I have…", dangling participles). Scoring is per band: a band only counts
+   if you get 3 of its 5 right, and a failed band caps your result.
+2. **One lesson per day, taught for slow learners** — every lesson is a small step in
+   plain language (explanation, examples, one memory tip) with a 5-question practice
+   where a hint reveals a simplified rule before you answer. Pass 4 of 5 to unlock the
+   reviews. Different angles each time: fill-in, find-the-mistake, trap forms.
+3. **Spaced repetition (mastery = proof over days, not one session)** — after the
+   lesson, a 1-question review waits for you tomorrow, then in 3 days, then in 7 days
+   (Leitner boxes). Fail a review and the app re-teaches the rule and asks a
+   *different* question until you get it right — repetition that teaches, not repeats.
+   A lesson is only "mastered" after all reviews pass.
+4. **Level-up test** — all 4 topics of a level mastered → 8 hard questions, need 6
+   right to move up (A1 → A2 → B1 → B2 → C1).
+5. **Reminders without opening the app** — a notification with a micro-review roughly
+   every 2 hours, plus a home-screen widget that always shows your level, streak,
+   what's due and your progress. Tapping it opens the app.
 
 ## Curriculum (v1)
 

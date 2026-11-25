@@ -34,5 +34,6 @@ data class QuizQuestion(
     val question: String,
     val options: List<String>,
     val correctIndex: Int,
-    val explanation: String
+    val explanation: String,
+    val hint: String = ""
 )
