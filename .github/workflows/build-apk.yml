@@ -17,11 +17,14 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Show preinstalled SDK
+        run: echo "ANDROID_HOME=$ANDROID_HOME" && sdkmanager --list_installed 2>/dev/null | head -5
 
       - name: Generate Gradle wrapper
-        run: gradle wrapper --gradle-version 8.9
+        run: gradle wrapper --gradle-version 8.9 || gradle wrapper --gradle-version 8.9 --offline
+
+      - name: Accept SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon
