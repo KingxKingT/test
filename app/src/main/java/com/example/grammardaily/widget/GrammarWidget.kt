@@ -1,6 +1,7 @@
 package com.example.grammardaily.widget
 
 import android.content.Context
+import android.content.Intent
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.compose.ui.unit.dp
@@ -47,7 +48,7 @@ class GrammarWidget : GlanceAppWidget() {
                     modifier = GlanceModifier
                         .fillMaxSize()
                         .background(GlanceTheme.colors.background)
-                        .clickable(actionStartActivity<MainActivity>())
+                        .clickable(actionStartActivity(Intent(context, MainActivity::class.java)))
                         .padding(10.dp),
                     horizontalAlignment = Alignment.Horizontal.Start,
                     verticalAlignment = Alignment.Vertical.CenterVertically
