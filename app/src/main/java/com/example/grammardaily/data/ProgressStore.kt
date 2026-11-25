@@ -43,11 +43,10 @@ object ProgressStore {
         val lessonDate = prefs.getString(KEY_LESSON_DATE, null)
         val lessonTopic = prefs.getString(KEY_LESSON_TOPIC, null)
         val todayDone = lessonDate == today.toString() && lessonTopic != null
-        val dueTopics = due.entries
-            .filter { it.value <= today && boxes[it.key] ?: 0 < MASTERY_BOX }
-            .keys
-            .sortedBy { (boxes[it] ?: 0) }
-            .mapNotNull { id -> findTopic(id) }
+        val dueTopicIds = due.filter { (id, date) ->
+            date <= today && (boxes[id] ?: 0) < MASTERY_BOX
+        }.keys.sortedBy { id -> boxes[id] ?: 0 }
+        val dueTopics = dueTopicIds.mapNotNull { id -> findTopic(id) }
         val pool = GrammarCurriculum.topicsByLevel[level].orEmpty()
         val lessonTopicNext = pool.firstOrNull {
             it.id !in mastered && (boxes[it.id] ?: 0) == 0
