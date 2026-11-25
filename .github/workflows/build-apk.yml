@@ -21,13 +21,16 @@ jobs:
         run: echo "ANDROID_HOME=$ANDROID_HOME" && sdkmanager --list_installed 2>/dev/null | head -5
 
       - name: Generate Gradle wrapper
-        run: gradle wrapper --gradle-version 8.9 || gradle wrapper --gradle-version 8.9 --offline
+        run: |
+          gradle wrapper --gradle-version 8.9 || \
+          gradle wrapper --gradle-version 8.9 || \
+          gradle wrapper --gradle-version 8.9
 
       - name: Accept SDK licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon || ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
