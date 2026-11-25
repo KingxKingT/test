@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Grammar Daily</string>
+    <string name="widget_name">Grammar reminder</string>
+</resources>
