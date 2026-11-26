@@ -425,6 +425,7 @@ fun PlacementScreen(
 ) {
     val exercises = remember { Placement.mixedTest() }
     var result by remember { mutableStateOf<PlacementResult?>(null) }
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var aiReport by remember { mutableStateOf<String?>(null) }
     var reportBusy by remember { mutableStateOf(false) }

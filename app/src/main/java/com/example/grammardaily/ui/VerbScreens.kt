@@ -427,7 +427,7 @@ fun AiTeacherCard(refresh: Int) {
                                 val ok = AiJudge.downloadBlocking(context, model.url) { d, t ->
                                     downProgress = d to t
                                 }
-                                withContext(Dispatchers.Main) {
+                                kotlinx.coroutines.withContext(Dispatchers.Main) {
                                     downProgress = null
                                     ready = ok
                                     status = if (ok)
