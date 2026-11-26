@@ -402,7 +402,7 @@ fun AiTeacherCard(refresh: Int) {
                 text = if (ready)
                     "Active: an open-source model on your phone reads every written answer and decides if it is correct \u2014 even different wordings that a simple checker would call wrong."
                 else
-                    "Your written answers are judged by the built-in checker. Import one small open-source model (like Gemma or Qwen) and a smarter AI judge will grade them.\n\nNo internet is used \u2014 the model runs on your phone.",
+                    "Your written answers are judged by the built-in checker. Tap Download below to get a small open-source AI (Gemma 3 1B) straight into the app — one tap, its own progress bar, nothing else needed.\n\nAfter that, judging runs fully offline on your phone, and it accepts different wordings a simple checker would call wrong.",
                 style = MaterialTheme.typography.bodyMedium
             )
             if (importing) Text("Copying model file \u2026 this can take a minute.")
@@ -417,35 +417,57 @@ fun AiTeacherCard(refresh: Int) {
                     "Downloading ${downName} \u2014 ${d / (1024 * 1024)} of ${t / (1024 * 1024)} MB",
                     style = MaterialTheme.typography.bodySmall
                 )
-            } else {
-                AiJudge.downloadableModels.forEach { model ->
-                    Button(
-                        onClick = {
-                            downName = model.name
-                            status = ""
-                            scope.launch(Dispatchers.IO) {
-                                val ok = AiJudge.downloadBlocking(context, model.url) { d, t ->
+            } else if (!ready) {
+                Button(
+                    onClick = {
+                        downName = "AI model"
+                        status = ""
+                        scope.launch(Dispatchers.IO) {
+                            var ok = false
+                            for (model in AiJudge.downloadableModels) {
+                                kotlinx.coroutines.withContext(Dispatchers.Main) { downName = model.name }
+                                ok = AiJudge.downloadBlocking(context, model.url) { d, t ->
                                     downProgress = d to t
                                 }
-                                kotlinx.coroutines.withContext(Dispatchers.Main) {
-                                    downProgress = null
-                                    ready = ok
-                                    status = if (ok)
-                                        "Model downloaded \u2014 the AI judge is now active."
-                                    else
-                                        "Download failed \u2014 check your internet, or use Import below."
-                                }
+                                if (ok) break
                             }
-                        },
-                        enabled = !importing && !ready,
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text("\u2b07 Download ${model.name}") }
-                }
+                            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                downProgress = null
+                                ready = ok
+                                status = if (ok)
+                                    "Model downloaded \u2014 the AI judge is now active."
+                                else
+                                    "Download failed \u2014 check your internet, or use Import below."
+                            }
+                        }
+                    },
+                    enabled = !importing,
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("\u2b07 Download the AI judge (529 MB, one tap)") }
                 Button(
                     onClick = { picker.launch("*/*") },
                     enabled = !importing,
                     modifier = Modifier.fillMaxWidth()
-                ) { Text(if (ready) "Replace the model \u2014 pick a file" else "Or import a model file from your phone") }
+                ) { Text("Or import a model file from your phone") }
+            } else {
+                Text(
+                    text = "Installed: " + AiJudge.modelFile(context).name +
+                        " (" + AiJudge.modelFile(context).length() / (1024 * 1024) + " MB)",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Button(
+                    onClick = { picker.launch("*/*") },
+                    enabled = !importing,
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Replace the model \u2014 pick a file") }
+                OutlinedButton(
+                    onClick = {
+                        AiJudge.deleteModel(context)
+                        ready = false
+                        status = "Model deleted \u2014 the built-in checker judges again."
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Delete the model (free up space)") }
             }
             Text(
                 text = "How to get a model: on your computer or phone browser, download a small open-source model in MediaPipe .task format (Gemma 3 1B, about 550 MB) or a GGUF file (Qwen 0.6B, about 350 MB). Then tap Import and pick the file. It runs fully offline, with no talking \u2014 it only judges your answers.",

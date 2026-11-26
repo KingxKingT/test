@@ -32,6 +32,17 @@ object AiJudge {
 
     fun isModelReady(context: Context): Boolean = modelFile(context).length() > 1_000_000
 
+    fun deleteModel(context: Context) {
+        try {
+            llm?.close()
+        } catch (e: Exception) {
+        }
+        llm = null
+        loadFailed = false
+        val f = modelFile(context)
+        if (f.exists()) f.delete()
+    }
+
     fun importModel(context: Context, uri: Uri): Boolean {
         return try {
             val target = modelFile(context)
