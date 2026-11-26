@@ -30,8 +30,11 @@ object AiJudge {
     private const val PREFS = "ai_teacher_state"
     private const val KEY_TIMEOUT_COUNT = "timeout_count"
     private const val KEY_DISABLED = "disabled"
+    private const val KEY_LAST_TIMEOUT = "last_timeout_at"
+    private const val KEY_DISABLED_AT = "disabled_at"
     private const val MAX_TIMEOUTS = 3
     private const val ANSWER_TIMEOUT_MS = 90_000L
+    private const val DAY_MS = 86_400_000L
 
     const val KEY_PROMPT = "judge_prompt"
     const val KEY_RECEIVER = "judge_receiver"
@@ -49,15 +52,27 @@ object AiJudge {
     private fun aiPrefs(context: Context) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    fun isDisabled(context: Context): Boolean =
-        aiPrefs(context).getBoolean(KEY_DISABLED, false)
+    fun isDisabled(context: Context): Boolean {
+        val p = aiPrefs(context)
+        if (!p.getBoolean(KEY_DISABLED, false)) return false
+        val at = p.getLong(KEY_DISABLED_AT, 0L)
+        if (at > 0L && System.currentTimeMillis() - at > DAY_MS) {
+            resetFailures(context)
+            return false
+        }
+        return true
+    }
 
     private fun markTimeout(context: Context) {
         val p = aiPrefs(context)
-        val count = p.getInt(KEY_TIMEOUT_COUNT, 0) + 1
+        val now = System.currentTimeMillis()
+        val last = p.getLong(KEY_LAST_TIMEOUT, 0L)
+        val count = if (last > 0L && now - last > DAY_MS) 1 else p.getInt(KEY_TIMEOUT_COUNT, 0) + 1
         p.edit()
             .putInt(KEY_TIMEOUT_COUNT, count)
             .putBoolean(KEY_DISABLED, count >= MAX_TIMEOUTS)
+            .putLong(KEY_LAST_TIMEOUT, now)
+            .putLong(KEY_DISABLED_AT, if (count >= MAX_TIMEOUTS) now else p.getLong(KEY_DISABLED_AT, 0L))
             .apply()
     }
 
@@ -72,7 +87,13 @@ object AiJudge {
         aiPrefs(context).edit()
             .putInt(KEY_TIMEOUT_COUNT, 0)
             .putBoolean(KEY_DISABLED, false)
+            .putLong(KEY_DISABLED_AT, 0L)
             .apply()
+    }
+
+    fun reEnable(context: Context) {
+        resetFailures(context)
+        warmUp(context)
     }
 
     fun deleteModel(context: Context) {

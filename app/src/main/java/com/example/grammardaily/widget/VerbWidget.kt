@@ -84,12 +84,12 @@ class VerbWidget : GlanceAppWidget() {
                 )
                 Text(
                     text = if (known) "\u2714 known" else event.tenseName,
-                    style = TextStyle(color = GlanceTheme.colors.secondary, fontSize = 11.sp)
+                    style = TextStyle(color = GlanceTheme.colors.secondary, fontSize = 13.sp)
                 )
             }
             Text(
                 text = event.formsLine,
-                style = TextStyle(color = GlanceTheme.colors.secondary, fontSize = 11.sp)
+                style = TextStyle(color = GlanceTheme.colors.secondary, fontSize = 13.sp)
             )
             Spacer(modifier = GlanceModifier.height(4.dp))
             Text(
@@ -102,12 +102,12 @@ class VerbWidget : GlanceAppWidget() {
             )
             Text(
                 text = event.useLine,
-                style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 11.sp)
+                style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 13.sp)
             )
             Spacer(modifier = GlanceModifier.height(4.dp))
             Text(
                 text = event.alt,
-                style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 11.sp)
+                style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 13.sp)
             )
             Spacer(modifier = GlanceModifier.defaultWeight())
             Row(modifier = GlanceModifier.fillMaxWidth()) {
@@ -123,7 +123,7 @@ class VerbWidget : GlanceAppWidget() {
                         text = "\u2714 I know this",
                         style = TextStyle(
                             color = GlanceTheme.colors.onPrimary,
-                            fontSize = 12.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         )
                     )
@@ -141,7 +141,7 @@ class VerbWidget : GlanceAppWidget() {
                         text = "\u21bb Show again",
                         style = TextStyle(
                             color = GlanceTheme.colors.onSecondaryContainer,
-                            fontSize = 12.sp
+                            fontSize = 13.sp
                         )
                     )
                 }

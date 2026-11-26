@@ -369,7 +369,7 @@ fun VerbSettingsScreen(
 fun AiTeacherCard(refresh: Int) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var ready by remember(refresh) { mutableStateOf(AiJudge.isModelReady(context) && !AiJudge.isDisabled(context)) }
+    var ready by remember(refresh) { mutableStateOf(AiJudge.isModelReady(context)) }
     var disabled by remember(refresh) { mutableStateOf(AiJudge.isDisabled(context)) }
     var status by remember(refresh) { mutableStateOf("") }
     var importing by remember { mutableStateOf(false) }
@@ -421,7 +421,7 @@ fun AiTeacherCard(refresh: Int) {
                                 "Downloading \u2014 ${d / (1024 * 1024)} of ${t / (1024 * 1024)} MB"
                             }
                             ready && !disabled -> "Installed \u2014 judging your written answers, offline."
-                            disabled -> "The AI model could not run \u2014 the built-in checker judges instead."
+                            ready && disabled -> "The judge switched itself off after slow answers. Your model is still installed \u2014 no download needed."
                             else -> "A small open-source AI can judge your written answers."
                         },
                         style = MaterialTheme.typography.bodySmall,
@@ -440,12 +440,25 @@ fun AiTeacherCard(refresh: Int) {
                 if (status.isNotBlank()) {
                     Text(text = status, color = MaterialTheme.colorScheme.tertiary)
                 }
-                if (disabled) {
+                if (disabled && ready) {
                     Text(
-                        text = "The AI model failed to run on this phone \u2014 the built-in checker judges again. Delete the model, then download it again to try.",
+                        text = "After 3 slow answers the AI judge switches itself off to keep the app fast. Your model is still on this phone \u2014 turning it back on needs no download.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
+                    Button(
+                        onClick = {
+                            scope.launch(Dispatchers.IO) {
+                                AiJudge.reEnable(context)
+                                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                    disabled = false
+                                    ready = true
+                                    status = "The AI judge is back on."
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Turn the AI back on") }
                 }
                 when {
                     downProgress != null -> {
