@@ -1,3 +1,10 @@
+package com.example.grammardaily.data
+
+data class WriteTask(
+    val starter: String,
+    val example: String
+)
+
 object WriteBank {
     val tasks: Map<String, List<WriteTask>> = mapOf(
         "A1:articles" to listOf(
