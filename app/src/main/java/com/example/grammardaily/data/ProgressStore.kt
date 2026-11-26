@@ -242,3 +242,16 @@ object ProgressStore {
     private fun prefs(context: Context) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 }
+
+object TextScale {
+    fun get(context: Context): Float =
+        context.getSharedPreferences("grammar_daily", Context.MODE_PRIVATE)
+            .getFloat("text_scale", 1f)
+
+    fun set(context: Context, value: Float) {
+        context.getSharedPreferences("grammar_daily", Context.MODE_PRIVATE)
+            .edit()
+            .putFloat("text_scale", value)
+            .apply()
+    }
+}

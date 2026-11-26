@@ -18,15 +18,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import com.example.grammardaily.data.AiJudge
 import com.example.grammardaily.data.Placement
 import com.example.grammardaily.data.ProgressStore
+import com.example.grammardaily.data.TextScale
 import com.example.grammardaily.data.ExerciseEngine
 import com.example.grammardaily.data.QuestionBank
 import com.example.grammardaily.notify.ReminderWorker
@@ -66,6 +71,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppRoot(verbCardRequest: MutableState<Boolean>) {
     val context = LocalContext.current
+    val density = LocalDensity.current
+    var textScale by remember { mutableFloatStateOf(TextScale.get(context)) }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { }
@@ -94,6 +101,9 @@ fun AppRoot(verbCardRequest: MutableState<Boolean>) {
     }
 
     Scaffold { padding ->
+        CompositionLocalProvider(
+            LocalDensity provides Density(density.density, density.fontScale * textScale)
+        ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -117,7 +127,12 @@ fun AppRoot(verbCardRequest: MutableState<Boolean>) {
                         )
                     },
                     onStartReview = { topics -> screen = AppScreen.Review(topics) },
-                    onOpenVerbSettings = { screen = AppScreen.VerbSettings }
+                    onOpenVerbSettings = { screen = AppScreen.VerbSettings },
+                    textScale = textScale,
+                    onTextScale = { v ->
+                        textScale = v
+                        TextScale.set(context, v)
+                    }
                 )
 
                 is AppScreen.Placement -> PlacementScreen(
@@ -192,6 +207,7 @@ fun AppRoot(verbCardRequest: MutableState<Boolean>) {
                     onExit = { goHome() }
                 )
             }
+        }
         }
     }
 }

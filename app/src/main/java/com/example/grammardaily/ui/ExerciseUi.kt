@@ -35,6 +35,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -269,7 +272,8 @@ fun ExerciseItem(
                         Text(
                             text = "The AI judge is reading your answer\u2026",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
                         )
                     }
                     if (attempts > 0 && !judging) {
@@ -319,16 +323,18 @@ fun ExerciseItem(
                 Text(
                     text = if (appealed) "\u2705 Accepted \u2014 your version also works" else "\u2705 Correct!",
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color(0xFF2E7D32)
+                    color = Color(0xFF2E7D32),
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
                 )
                 if (appealed) {
                     Text(text = "Model answer: $shownCorrect", style = MaterialTheme.typography.bodyMedium)
                 }
             } else {
                 Text(
-                    text = "\u274C The right answer:",
+                    text = "\u274C Not right yet \u2014 the correct answer:",
                     style = MaterialTheme.typography.titleSmall,
-                    color = Color(0xFFB3261E)
+                    color = Color(0xFFB3261E),
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
                 )
                 Text(text = shownCorrect, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
             }

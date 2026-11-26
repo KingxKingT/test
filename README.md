@@ -64,6 +64,18 @@ Every method in this app is backed by published second-language-acquisition rese
 - **Produce the pattern yourself, in your own words** — structural priming studies (McDonough and colleagues) show that producing a just-learned pattern, varied across your own vocabulary, builds the abstract rule. That is why every practice set ends with a "write your own sentence" exercise read by the AI judge.
 - **Learn chunks, not just rules** — research on formulaic language (Wray, Conklin & Schmitt) estimates 50–80% of fluent speech is fixed multi-word blocks. Every lesson card includes "say these as one block" chunks.
 
+## Accessibility first (easier for one = easier for everyone)
+
+This follow-up research pass applied the curb-cut effect and Universal Design for Learning (UDL) to every screen. Evidence used: WCAG 2.1 guidance, dyslexia and text-adjustment research (Sustainability 2025 review; UDL framework papers), and the curb-cut literature — features built for disabled learners become everyday conveniences for everyone (captions, TTS, larger text, plain words).
+
+What the app does because of it:
+
+- **Adjustable text size (A / A+ / A++)** on the home screen, remembered between sessions — the single most-requested accessibility feature in learning-app research. Helps dyslexic and low-vision learners first; on a sunny bus, everyone.
+- **Hear any rule out loud** — every lesson has a "Hear this pattern" button (text-to-speech) — multimodal representation per UDL; also how commuters learn with their ears.
+- **Never color-only** — the highlighted "changing word" in examples is now bold + underlined + colored (WCAG 1.4.1), so color-blind learners lose nothing.
+- **Screen-reader friendly feedback** — correctness, corrections, and "AI is judging" states announce themselves (Compose live regions), no tapping around to discover the verdict.
+- **Plain words everywhere** — the v9 jargon purge (no "V2/V3", no "auxiliary") is exactly the "easy language" curb cut: clearer for cognitive disabilities, clearer for every non-native speaker.
+
 ## Curriculum (v1)
 
 | Level | Topics |

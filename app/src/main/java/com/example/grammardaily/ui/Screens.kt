@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -80,7 +81,9 @@ fun HomeScreen(
     onStartLevelUp: (List<QuizQuestion>) -> Unit,
     onExtraPractice: (Topic) -> Unit,
     onStartReview: (List<Topic>) -> Unit,
-    onOpenVerbSettings: () -> Unit
+    onOpenVerbSettings: () -> Unit,
+    textScale: Float,
+    onTextScale: (Float) -> Unit
 ) {
     val context = LocalContext.current
     var state by remember { mutableStateOf<ProgressState?>(null) }
@@ -274,6 +277,27 @@ fun HomeScreen(
 
         AiTeacherCard(refresh = refresh)
 
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Text size",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+                listOf(1f to "A", 1.25f to "A+", 1.5f to "A++").forEach { (value, label) ->
+                    TextButton(onClick = { onTextScale(value) }) {
+                        Text(
+                            text = if (textScale == value) label + " \u2713" else label,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
         TextButton(onClick = onStartPlacement, modifier = Modifier.fillMaxWidth()) {
             Text("Retake the level test")
         }
@@ -290,6 +314,7 @@ fun LessonScreen(
     var discoveryAnswered by remember(topic.id) { mutableStateOf(false) }
     var discoveryCorrect by remember(topic.id) { mutableStateOf(false) }
     var picked by remember(topic.id) { mutableStateOf(-1) }
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -398,6 +423,10 @@ fun LessonScreen(
                         }
                     }
                 }
+                TextButton(onClick = {
+                    Audio.init(context)
+                    Audio.speak(rule.pattern + ". " + topic.examples.joinToString(". "))
+                }) { Text("\uD83D\uDD0A Hear this pattern") }
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(
                         modifier = Modifier.padding(14.dp),
@@ -546,6 +575,7 @@ fun HighlightedText(text: String, style: TextStyle) {
                     withStyle(
                         SpanStyle(
                             fontWeight = FontWeight.Bold,
+                            textDecoration = TextDecoration.Underline,
                             color = MaterialTheme.colorScheme.primary
                         )
                     ) { append(part) }
