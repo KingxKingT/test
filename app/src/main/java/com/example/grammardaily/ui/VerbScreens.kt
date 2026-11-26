@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -123,7 +124,7 @@ fun VerbExerciseScreen(
             ExerciseItem(
                 exercise = exercise,
                 showHint = true,
-                onAnswered = { },
+                onAnswered = { _, _ -> },
                 onNext = {
                     solved = true
                     ProgressStore.recordAnswers(
@@ -364,6 +365,8 @@ fun AiTeacherCard(refresh: Int) {
     var ready by remember(refresh) { mutableStateOf(AiJudge.isModelReady(context)) }
     var status by remember(refresh) { mutableStateOf("") }
     var importing by remember { mutableStateOf(false) }
+    var downProgress by remember { mutableStateOf<Pair<Long, Long>?>(null) }
+    var downName by remember { mutableStateOf("") }
     val picker = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
@@ -404,11 +407,46 @@ fun AiTeacherCard(refresh: Int) {
             )
             if (importing) Text("Copying model file \u2026 this can take a minute.")
             if (status.isNotBlank()) Text(status, color = MaterialTheme.colorScheme.tertiary)
-            Button(
-                onClick = { picker.launch("*/*") },
-                enabled = !importing,
-                modifier = Modifier.fillMaxWidth()
-            ) { Text(if (ready) "Replace the model" else "Import a model file") }
+            if (downProgress != null) {
+                val (d, t) = downProgress!!
+                LinearProgressIndicator(
+                    progress = { (d.toDouble() / t.coerceAtLeast(1)).toFloat() },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    "Downloading ${downName} \u2014 ${d / (1024 * 1024)} of ${t / (1024 * 1024)} MB",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            } else {
+                AiJudge.downloadableModels.forEach { model ->
+                    Button(
+                        onClick = {
+                            downName = model.name
+                            status = ""
+                            scope.launch(Dispatchers.IO) {
+                                val ok = AiJudge.downloadBlocking(context, model.url) { d, t ->
+                                    downProgress = d to t
+                                }
+                                withContext(Dispatchers.Main) {
+                                    downProgress = null
+                                    ready = ok
+                                    status = if (ok)
+                                        "Model downloaded \u2014 the AI judge is now active."
+                                    else
+                                        "Download failed \u2014 check your internet, or use Import below."
+                                }
+                            }
+                        },
+                        enabled = !importing && !ready,
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("\u2b07 Download ${model.name}") }
+                }
+                Button(
+                    onClick = { picker.launch("*/*") },
+                    enabled = !importing,
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text(if (ready) "Replace the model \u2014 pick a file" else "Or import a model file from your phone") }
+            }
             Text(
                 text = "How to get a model: on your computer or phone browser, download a small open-source model in MediaPipe .task format (Gemma 3 1B, about 550 MB) or a GGUF file (Qwen 0.6B, about 350 MB). Then tap Import and pick the file. It runs fully offline, with no talking \u2014 it only judges your answers.",
                 style = MaterialTheme.typography.bodySmall,

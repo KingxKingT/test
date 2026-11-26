@@ -46,7 +46,9 @@ import com.example.grammardaily.data.ExerciseResult
 import com.example.grammardaily.data.Placement
 import com.example.grammardaily.data.PlacementResult
 import com.example.grammardaily.data.Topic
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 object Audio {
     @Volatile
@@ -92,7 +94,7 @@ private fun feedbackColors(selected: Int?, option: ExOption, checked: Boolean): 
 fun ExerciseItem(
     exercise: Exercise,
     showHint: Boolean,
-    onAnswered: (correct: Boolean) -> Unit,
+    onAnswered: (correct: Boolean, given: String?) -> Unit,
     onNext: (() -> Unit)?,
     nextLabel: String,
     onAppealed: () -> Unit = {}
@@ -170,7 +172,7 @@ fun ExerciseItem(
                                 selected = option.originalIndex
                                 checked = true
                                 wasCorrect = option.isCorrect
-                                onAnswered(option.isCorrect)
+                                onAnswered(option.isCorrect, null)
                             }
                         }
                     ) {
@@ -212,7 +214,7 @@ fun ExerciseItem(
                             val built = placedIdx.joinToString(" ") { exercise.words[it] }
                             checked = true
                             wasCorrect = ExerciseEngine.closeEnough(built, exercise.answer)
-                            onAnswered(wasCorrect)
+                            onAnswered(wasCorrect, built)
                         },
                         enabled = placedIdx.size == exercise.words.size,
                         modifier = Modifier.fillMaxWidth()
@@ -238,7 +240,7 @@ fun ExerciseItem(
                                 checked = true
                                 wasCorrect = verdict.correct
                                 judgedNote = verdict.note.takeIf { !verdict.correct }
-                                onAnswered(verdict.correct)
+                                onAnswered(verdict.correct, typed)
                             }
                         },
                         enabled = typed.isNotBlank() && !judging,
@@ -401,8 +403,8 @@ fun ExerciseRunner(
         ExerciseItem(
             exercise = exercise,
             showHint = showHints,
-            onAnswered = { correct ->
-                results.value = results.value + ExerciseResult(exercise.topicId, exercise.kind, correct)
+            onAnswered = { correct, given ->
+                results.value = results.value + ExerciseResult(exercise.topicId, exercise.kind, correct, given)
             },
             onNext = { index = index + 1 },
             nextLabel = if (index + 1 >= exercises.size) "See my result" else "Next question",
@@ -423,6 +425,9 @@ fun PlacementScreen(
 ) {
     val exercises = remember { Placement.mixedTest() }
     var result by remember { mutableStateOf<PlacementResult?>(null) }
+    val scope = rememberCoroutineScope()
+    var aiReport by remember { mutableStateOf<String?>(null) }
+    var reportBusy by remember { mutableStateOf(false) }
 
     if (result != null) {
         val res = result!!
@@ -467,6 +472,32 @@ fun PlacementScreen(
                 res.studyNext.forEach { topic ->
                     Text(text = "\u2022 ${topic.title}", style = MaterialTheme.typography.bodyMedium)
                 }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            if (aiReport == null) {
+                Button(
+                    onClick = {
+                        reportBusy = true
+                        scope.launch {
+                            val report = withContext(Dispatchers.Default) {
+                                AiJudge.levelReportBlocking(
+                                    context, res.level, res.scores, res.results
+                                )
+                            }
+                            aiReport = report
+                            reportBusy = false
+                        }
+                    },
+                    enabled = !reportBusy,
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text(if (reportBusy) "Reading your written answers\u2026" else "\uD83E\uDDE0 Let the AI judge my grammar") }
+            } else {
+                Text(
+                    text = "\uD83E\uDDE0 AI judge",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(text = aiReport!!, style = MaterialTheme.typography.bodyMedium)
             }
             Spacer(modifier = Modifier.weight(1f))
             Button(onClick = { onFinished(res) }, modifier = Modifier.fillMaxWidth()) {

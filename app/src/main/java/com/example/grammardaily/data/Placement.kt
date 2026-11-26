@@ -3,7 +3,8 @@ package com.example.grammardaily.data
 data class PlacementResult(
     val level: Level,
     val scores: List<Triple<Topic, Int, Int>>,
-    val studyNext: List<Topic>
+    val studyNext: List<Topic>,
+    val results: List<ExerciseResult> = emptyList()
 )
 
 object Placement {
@@ -23,6 +24,6 @@ object Placement {
             }
         val next = ExerciseEngine.studyNext(exercises, results)
             .mapNotNull { ProgressStore.findTopicById(it) }
-        return PlacementResult(level, scores, next)
+        return PlacementResult(level, scores, next, results)
     }
 }

@@ -27,15 +27,20 @@ teaches you one grammar lesson every day until you have mastered the whole path.
    order and different wording that carries the target grammar; you can import a
    small open-source model (Gemma 3 1B .task or Qwen 0.6B GGUF, MediaPipe on-device
    runtime, like Layla) and it judges every written answer YES/NO, fully offline,
-   with no chat. Still unconvinced? "My answer makes sense too" accepts your own
-   answer and shows the model answer next to it.
-5. **Weak-spot tracking** — mistakes are counted per rule; weak rules come back more
+   with no chat. **Download it right in the app** (one button, ~529 MB Gemma 3 1B)
+   or import any compatible file. Still unconvinced? "My answer makes sense too"
+   accepts your own answer and shows the model answer next to it.
+5. **AI grammar report after the test** — at the end of the level check, the AI
+   reads your actual written answers (not just right/wrong marks) and answers:
+   what your grammar level is and what to learn next, as a short list. Without a
+   model installed it gives the same report from your per-topic scores.
+6. **Weak-spot tracking** — mistakes are counted per rule; weak rules come back more
    often in reviews and extra practice, and the home screen shows a "Weak spots" card.
-6. **Spaced repetition (mastery = proof over days, not one session)** — after the
+7. **Spaced repetition (mastery = proof over days, not one session)** — after the
    lesson, a review waits tomorrow, in 3 days and in 7 days (Leitner boxes), using a
    different exercise type each time. Fail one and the rule is re-taught before a
    fresh question. A lesson is only "mastered" after all reviews pass.
-7. **Daily Verb Widget** — pick up to 3 verbs (or use the level-based suggestions);
+8. **Daily Verb Widget** — pick up to 3 verbs (or use the level-based suggestions);
    a second home-screen widget shows one verb at a time in a random tense
    (present simple → conditional), random form (positive / negative / question),
    with the sentence, the tense name, a "when to use it" line, one extra example and
@@ -43,9 +48,9 @@ teaches you one grammar lesson every day until you have mastered the whole path.
    exact card. Mark cards "**I know this**" or "**Show again**" — show-again cards
    return about twice as often. Rotation honors your chosen times-per-day (1/2/3/6)
    and quiet hours. All sentences are generated offline — no AI calls.
-8. **Level-up test** — all topics of a level mastered → 8 hard questions, need 6
+9. **Level-up test** — all topics of a level mastered → 8 hard questions, need 6
    right to move up (A1 → A2 → B1 → B2 → C1).
-9. **Reminders without opening the app** — a notification with a micro-review roughly
+10. **Reminders without opening the app** — a notification with a micro-review roughly
    every 2 hours, plus a level/streak home-screen widget showing progress. Tapping
    either widget opens the app.
 

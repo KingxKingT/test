@@ -502,7 +502,7 @@ fun LessonScreen(
                 ExerciseItem(
                     exercise = tryExercise,
                     showHint = true,
-                    onAnswered = { },
+                    onAnswered = { _, _ -> },
                     onNext = { tryDone = true },
                     nextLabel = "Next \u2192 practice"
                 )
@@ -791,7 +791,7 @@ fun ReviewScreen(
             ExerciseItem(
                 exercise = exercise,
                 showHint = true,
-                onAnswered = { correct ->
+                onAnswered = { correct, _ ->
                     ProgressStore.recordAnswers(
                         context,
                         listOf(com.example.grammardaily.data.ExerciseResult(topic.id, exercise.kind, correct))

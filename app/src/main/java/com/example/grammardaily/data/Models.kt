@@ -63,4 +63,9 @@ data class Exercise(
     val hint: String = ""
 )
 
-data class ExerciseResult(val topicId: String, val kind: ExKind, val correct: Boolean)
+data class ExerciseResult(
+    val topicId: String,
+    val kind: ExKind,
+    val correct: Boolean,
+    val given: String? = null
+)

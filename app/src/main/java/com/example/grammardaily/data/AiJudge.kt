@@ -4,6 +4,8 @@ import android.content.Context
 import android.net.Uri
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 
 data class JudgeResult(
     val correct: Boolean,
@@ -140,6 +142,128 @@ object AiJudge {
         }
 
         return null
+    }
+
+
+    data class DownloadableModel(val name: String, val sizeMb: Int, val url: String)
+
+    val downloadableModels = listOf(
+        DownloadableModel(
+            "Gemma 3 1B (recommended, 529 MB)",
+            529,
+            "https://huggingface.co/ekyra15/vaya-gemma3-1b-it-int4/resolve/main/gemma3-1b-it-int4.task"
+        ),
+        DownloadableModel(
+            "Gemma 3 1B mirror (529 MB)",
+            529,
+            "https://huggingface.co/meldgaard/ilt-gemma3-1b-it-litert/resolve/main/gemma3-1b-it.task"
+        )
+    )
+
+    fun downloadBlocking(context: Context, url: String, onProgress: (downloaded: Long, total: Long) -> Unit): Boolean {
+        val target = modelFile(context)
+        val tmp = File(target.absolutePath + ".downloading")
+        try {
+            tmp.outputStream().use { output ->
+                val conn = URL(url).openConnection() as HttpURLConnection
+                conn.instanceFollowRedirects = true
+                conn.connectTimeout = 30000
+                conn.readTimeout = 60000
+                conn.connect()
+                if (conn.responseCode !in 200..299) {
+                    conn.disconnect()
+                    return false
+                }
+                val total = conn.contentLengthLong
+                conn.inputStream.use { input ->
+                    val buf = ByteArray(1 shl 16)
+                    var read = 0L
+                    var n = input.read(buf)
+                    while (n >= 0) {
+                        output.write(buf, 0, n)
+                        read += n
+                        if (total > 0) onProgress(read, total)
+                        n = input.read(buf)
+                    }
+                }
+                conn.disconnect()
+            }
+            if (tmp.length() < 1_000_000) {
+                tmp.delete()
+                return false
+            }
+            if (target.exists()) target.delete()
+            tmp.renameTo(target)
+            llm = null
+            loadFailed = false
+            return true
+        } catch (e: Exception) {
+            tmp.delete()
+            return false
+        }
+    }
+
+    private fun writtenSummary(results: List<ExerciseResult>): String {
+        val typed = results.filter { it.given != null && it.given!!.isNotBlank() }
+        if (typed.isEmpty()) return "(no written answers)"
+        return typed.take(10).joinToString("\n") { r ->
+            "- wrote: \"" + r.given!!.trim().take(120) + "\" -> " + if (r.correct) "accepted" else "rejected"
+        }
+    }
+
+    fun levelReportBlocking(
+        context: Context,
+        level: Level,
+        scores: List<Triple<Topic, Int, Int>>,
+        results: List<ExerciseResult>
+    ): String {
+        val model = ensureLoaded(context)
+        if (model != null) {
+            val scoreLines = scores.joinToString("\n") { (topic, c, t) ->
+                "${topic.id} ${topic.title}: $c of $t correct"
+            }
+            val prompt = buildString {
+                append("You are an English grammar teacher. A student took a test.\n")
+                append("Results per topic:\n").append(scoreLines).append("\n")
+                append("The student's written answers were read and checked like this:\n")
+                append(writtenSummary(results)).append("\n\n")
+                append("Decide the student's grammar level (A1, A2, B1, B2 or C1) and what to learn next.\n")
+                append("Reply in exactly this format, with nothing before or after:\n")
+                append("LEVEL: <one letter-number code>\n")
+                append("- <one short line what to learn, max 5 lines, simple words>")
+            }
+            val raw = try {
+                model.generateResponse(prompt)
+            } catch (e: Exception) {
+                null
+            }
+            if (!raw.isNullOrBlank()) {
+                val lines = raw.trim().lines().filter { it.isNotBlank() }
+                val levelLine = lines.firstOrNull { it.uppercase().contains("LEVEL") }
+                    ?.let { it.substringAfter(":").trim().take(30) }
+                val bullets = lines.filter { it.trim().startsWith("-") }.take(5)
+                if (bullets.isNotEmpty()) {
+                    return buildString {
+                        if (levelLine != null) append("AI judge: your grammar level is " + levelLine + ".\n")
+                        append("What to learn next:\n")
+                        bullets.forEach { append(it.trim()).append("\n") }
+                    }.trim()
+                }
+            }
+        }
+        val weak = scores.filter { (topic, c, t) -> t > 0 && c < t }
+            .sortedBy { (topic, c, t) -> c.toDouble() / t }
+            .take(3)
+        return buildString {
+            append("Checked your answers without the AI model (import one below for an AI-judged report).\n")
+            append("Level: " + level.code + " \u2014 " + level.title + ".\n")
+            if (weak.isEmpty()) {
+                append("No weak topics in this test \u2014 keep going with your daily lessons.")
+            } else {
+                append("What to learn next:\n")
+                weak.forEach { (topic, c, t) -> append("- " + topic.title + " (" + c + "/" + t + " right)\n") }
+            }
+        }.trim()
     }
 
     fun judgeBlocking(context: Context, exercise: Exercise, given: String): JudgeResult {
