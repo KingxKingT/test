@@ -498,9 +498,14 @@ fun PlacementScreen(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Score per grammar topic:",
+                text = "What the test met:",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "One question per topic \u2014 these are hints, not verdicts.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             res.scores.forEach { (topic, c, t) ->
                 Row(
@@ -512,14 +517,18 @@ fun PlacementScreen(
                         text = "$c/$t",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
-                        color = if (c == t) Color(0xFF2E7D32) else if (c == 0) Color(0xFFB3261E) else Color.Unspecified
+                        color = when {
+                            t >= 2 && c == t -> Color(0xFF2E7D32)
+                            t >= 2 && c == 0 -> Color(0xFFB3261E)
+                            else -> Color.Unspecified
+                        }
                     )
                 }
             }
             if (res.studyNext.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "Study this next:",
+                    text = "Worth revisiting first:",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )

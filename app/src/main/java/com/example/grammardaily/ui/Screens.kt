@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import com.example.grammardaily.data.Exercise
 import com.example.grammardaily.data.ChunkBank
 import com.example.grammardaily.data.ExerciseEngine
+import com.example.grammardaily.data.ExerciseResult
 import com.example.grammardaily.data.GrammarCurriculum
 import com.example.grammardaily.data.Level
 import com.example.grammardaily.data.Placement
@@ -229,6 +230,64 @@ fun HomeScreen(
             }
         }
 
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "\uD83D\uDCD8 Daily verb widget",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Little reminders on your home screen, all day",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedButton(onClick = onOpenVerbSettings, modifier = Modifier.fillMaxWidth()) {
+                    Text("Choose verbs & schedule")
+                }
+            }
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "Your path in ${current.level.code}",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                levelTopics.forEachIndexed { i, t ->
+                    val mastered = t.id in current.masteredTopicIds
+                    val isToday = t.id == todayTopic?.id
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = when {
+                                mastered -> "\u2705"
+                                isToday -> "\u2192"
+                                else -> "${i + 1}."
+                            },
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = t.title,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                            color = if (mastered) MaterialTheme.colorScheme.onSurfaceVariant
+                                    else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+        }
+
         if (current.dueReviewTopics.isNotEmpty()) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -269,22 +328,6 @@ fun HomeScreen(
             }
         }
 
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    text = "\uD83D\uDCD8 Daily verb widget",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                OutlinedButton(onClick = onOpenVerbSettings, modifier = Modifier.fillMaxWidth()) {
-                    Text("Choose verbs & schedule")
-                }
-            }
-        }
-
         AiTeacherCard(refresh = refresh)
 
         Row(
@@ -321,6 +364,7 @@ fun LessonScreen(
     onStartPractice: (Topic) -> Unit
 ) {
     val discovery = topic.discovery
+    val quickTry = remember(topic.id) { ExerciseEngine.typePool(topic.id).firstOrNull() }
     var discoveryAnswered by remember(topic.id) { mutableStateOf(false) }
     var discoveryCorrect by remember(topic.id) { mutableStateOf(false) }
     var picked by remember(topic.id) { mutableStateOf(-1) }
@@ -437,6 +481,35 @@ fun LessonScreen(
                     Audio.init(context)
                     Audio.speak(rule.pattern + ". " + topic.examples.joinToString(". "))
                 }) { Text("\uD83D\uDD0A Hear this pattern") }
+                quickTry?.let { ex ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Try it now \u2014 no pressure",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            ExerciseItem(
+                                exercise = ex,
+                                showHint = true,
+                                onAnswered = { correct, _ ->
+                                    ProgressStore.recordAnswers(
+                                        context,
+                                        listOf(ExerciseResult(ex.topicId, ex.kind, correct))
+                                    )
+                                },
+                                onNext = null,
+                                nextLabel = ""
+                            )
+                        }
+                    }
+                }
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(
                         modifier = Modifier.padding(14.dp),
