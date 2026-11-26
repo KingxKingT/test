@@ -279,7 +279,7 @@ fun HomeScreen(
         }
 
         Spacer(modifier = Modifier.height(4.dp))
-        AiTeacherCard(refresh = homeRefresh)
+        AiTeacherCard(refresh = refresh)
         Spacer(modifier = Modifier.height(4.dp))
         OutlinedButton(onClick = onStartPlacement, modifier = Modifier.fillMaxWidth()) {
             Text("Retake the placement test")
