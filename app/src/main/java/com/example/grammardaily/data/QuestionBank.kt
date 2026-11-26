@@ -503,7 +503,7 @@ object QuestionBank {
         QuizQuestion("B1:question-tags", "She isn't coming tonight, ___?",
             listOf("is she", "isn't she", "does she", "won't she"), 0,
             "Negative statement \u2192 positive tag with the same helper verb (is).",
-            "Negative \u2192 positive tag, same helper verb.")),
+            "Negative \u2192 positive tag, same helper verb."),
         QuizQuestion("B1:question-tags", "Find the WRONG tag:",
             listOf("They arrived late, didn't they? \u2192 WRONG: don't they?", "They arrived late, didn't they?", "He can drive, can't he?", "It's hot, isn't it?"), 0,
             "The past simple \u201Carrived\u201D needs did in the tag: \u201Cdidn't they\u201D.",
