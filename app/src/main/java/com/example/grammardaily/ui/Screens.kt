@@ -1,5 +1,7 @@
 package com.example.grammardaily.ui
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -89,8 +91,9 @@ fun HomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
             text = "Grammar Daily",
@@ -99,22 +102,39 @@ fun HomeScreen(
         )
 
         if (!current.placementDone) {
-            Text(
-                text = "Welcome! No test is needed to start learning \u2014 you can simply begin. If you want, a short 15-question check finds your level and what to study first.",
-                style = MaterialTheme.typography.bodyLarge
-            )
-            Button(onClick = onStartPlacement, modifier = Modifier.fillMaxWidth()) {
-                Text("Check my level (15 questions)")
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Learn English grammar, a few minutes a day",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Start learning right away \u2014 no test needed. Want to know your exact level first? There is a short 15-question check.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Button(onClick = onSkipTest, modifier = Modifier.fillMaxWidth()) {
+                        Text("Start learning \u2014 from B1")
+                    }
+                    OutlinedButton(onClick = onStartPlacement, modifier = Modifier.fillMaxWidth()) {
+                        Text("Check my level first (15 questions)")
+                    }
+                }
             }
-            OutlinedButton(onClick = onSkipTest, modifier = Modifier.fillMaxWidth()) {
-                Text("No test \u2014 start from B1")
-            }
-            Text(
-                text = "You can change your level later at any time.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
             return@Column
+        }
+
+        val levelTopics = GrammarCurriculum.topicsByLevel[current.level].orEmpty()
+        val masteredCount = levelTopics.count { it.id in current.masteredTopicIds }
+        val levelMastered = GrammarCurriculum.levelIsMastered(current.level, current.masteredTopicIds)
+        val todayTopic = current.todayLessonTopicId?.let { id ->
+            levelTopics.firstOrNull { it.id == id }
         }
 
         Card(
@@ -123,20 +143,24 @@ fun HomeScreen(
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = "Your level: ${current.level.code} \u00b7 ${current.level.title}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = if (current.streakDays > 0) "Streak: ${current.streakDays} day(s) \ud83d\udd25"
-                    else "Study today to start a streak",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                val levelTopics = GrammarCurriculum.topicsByLevel[current.level].orEmpty()
-                val masteredCount = levelTopics.count { it.id in current.masteredTopicIds }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "${current.level.code} \u00b7 ${current.level.title}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = if (current.streakDays > 0) "\uD83D\uDD25 ${current.streakDays} d"
+                        else "day 0",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
                 LinearProgressIndicator(
                     progress = {
                         if (levelTopics.isEmpty()) 0f else masteredCount.toFloat() / levelTopics.size
@@ -144,9 +168,50 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Text(
-                    text = "$masteredCount of ${levelTopics.size} lessons mastered (a lesson counts only after its reviews pass over several days)",
-                    style = MaterialTheme.typography.bodySmall
+                    text = "$masteredCount of ${levelTopics.size} lessons mastered",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                when {
+                    current.allMasteredFinished -> {
+                        Text(
+                            text = "You walked the whole path \u2014 every lesson is mastered. \uD83C\uDF89",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        OutlinedButton(
+                            onClick = {
+                                GrammarCurriculum.topicsByLevel[Level.A1]?.firstOrNull()?.let(onExtraPractice)
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("Keep practicing") }
+                    }
+
+                    levelMastered -> {
+                        Button(
+                            onClick = {
+                                current.level.next?.let { next ->
+                                    onStartLevelUp(QuestionBank.levelUpQuestions(next))
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("Level ${current.level.code} done \u2192 take the level-up test") }
+                    }
+
+                    todayTopic != null -> {
+                        Button(onClick = { onOpenLesson(todayTopic) }, modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                if (current.todayLessonDone) "Today's lesson is done \u2014 open it again"
+                                else "Today's lesson: ${todayTopic.title}"
+                            )
+                        }
+                        if (current.todayLessonDone) {
+                            OutlinedButton(
+                                onClick = { onExtraPractice(todayTopic) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text("Extra practice (nothing at stake)") }
+                        }
+                    }
+                }
             }
         }
 
@@ -155,45 +220,16 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
             ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "\ud83d\udd01 Reviews due: ${current.dueReviewTopics.size}",
+                        text = "\uD83D\uDD01 Reviews due: ${current.dueReviewTopics.size}",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Short checks on lessons you already did. A wrong answer sends you back to the rule and a fresh question \u2014 that is how it sticks.",
-                        style = MaterialTheme.typography.bodySmall
                     )
                     Button(
                         onClick = { onStartReview(current.dueReviewTopics) },
                         modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Do the reviews")
-                    }
-                }
-            }
-        }
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    text = "\uD83D\uDCD8 Daily verb widget",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "Pick up to 3 verbs; the widget shows them in a new tense and form several times a day \u2014 tap for a mini exercise.",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                OutlinedButton(onClick = onOpenVerbSettings, modifier = Modifier.fillMaxWidth()) {
-                    Text("Set up verbs & schedule")
+                    ) { Text("Do the reviews") }
                 }
             }
         }
@@ -204,9 +240,9 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
             ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        text = "\u26a0\ufe0f Weak spots \u2014 these rules hit back. Train one:",
+                        text = "\u26A0\uFE0F Weak spots \u2014 practice one:",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -219,70 +255,26 @@ fun HomeScreen(
             }
         }
 
-        val levelMastered = GrammarCurriculum.levelIsMastered(current.level, current.masteredTopicIds)
-        when {
-            current.allMasteredFinished -> {
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 Text(
-                    text = "You have walked the whole path: every lesson from beginner to advanced is truly mastered. Impressive!",
-                    style = MaterialTheme.typography.bodyLarge
+                    text = "\uD83D\uDCD8 Daily verb widget",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
                 )
-                OutlinedButton(
-                    onClick = {
-                        GrammarCurriculum.topicsByLevel[Level.A1]?.firstOrNull()?.let(onExtraPractice)
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Keep practicing")
-                }
-            }
-
-            levelMastered -> {
-                Text(
-                    text = "All lessons at ${current.level.code} are mastered. Prove it with the level-up test \u2014 8 harder questions, and you need 6 right.",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Button(
-                    onClick = {
-                        current.level.next?.let { next ->
-                            onStartLevelUp(QuestionBank.levelUpQuestions(next))
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Take the level-up test")
-                }
-            }
-
-            else -> {
-                val topic = current.todayLessonTopicId?.let { id ->
-                    GrammarCurriculum.topicsByLevel[current.level].orEmpty().firstOrNull { it.id == id }
-                }
-                if (topic != null) {
-                    Text(
-                        text = if (current.todayLessonDone) "Today's lesson is done \u2014 its review arrives tomorrow"
-                        else "Today's lesson",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Button(onClick = { onOpenLesson(topic) }, modifier = Modifier.fillMaxWidth()) {
-                        Text(topic.title)
-                    }
-                    if (current.todayLessonDone) {
-                        OutlinedButton(
-                            onClick = { onExtraPractice(topic) },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Extra practice (no mastery effect)")
-                        }
-                    }
+                OutlinedButton(onClick = onOpenVerbSettings, modifier = Modifier.fillMaxWidth()) {
+                    Text("Choose verbs & schedule")
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
         AiTeacherCard(refresh = refresh)
-        Spacer(modifier = Modifier.height(4.dp))
-        OutlinedButton(onClick = onStartPlacement, modifier = Modifier.fillMaxWidth()) {
-            Text("Retake the placement test")
+
+        TextButton(onClick = onStartPlacement, modifier = Modifier.fillMaxWidth()) {
+            Text("Retake the level test")
         }
     }
 }
@@ -301,6 +293,7 @@ fun LessonScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
@@ -508,7 +501,7 @@ fun LessonScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(8.dp))
             if (tryDone) {
                 Text(
                     text = "Time needed: about 4 minutes. After today, a one-question review waits for you tomorrow, in 3 days and in 7 days \u2014 pass them all and the lesson is truly yours.",
@@ -741,6 +734,7 @@ fun ReviewScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {

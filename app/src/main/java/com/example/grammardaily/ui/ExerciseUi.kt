@@ -4,6 +4,8 @@ package com.example.grammardaily.ui
 
 import android.content.Context
 import android.speech.tts.TextToSpeech
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -379,6 +381,7 @@ fun ExerciseRunner(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -435,6 +438,7 @@ fun PlacementScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -500,7 +504,7 @@ fun PlacementScreen(
                 )
                 Text(text = aiReport!!, style = MaterialTheme.typography.bodyMedium)
             }
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(8.dp))
             Button(onClick = { onFinished(res) }, modifier = Modifier.fillMaxWidth()) {
                 Text("Start learning at ${res.level.code}")
             }

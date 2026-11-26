@@ -2,6 +2,8 @@
 
 package com.example.grammardaily.ui
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -100,6 +102,7 @@ fun VerbExerciseScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -177,6 +180,7 @@ fun VerbSettingsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -350,7 +354,7 @@ fun VerbSettingsScreen(
 
         AiTeacherCard(refresh = refresh)
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = "The widget shows your verbs in a new tense and form several times a day, at random moments during your waking hours. Tap the card for a quick fill-the-blank or rebuild exercise.",
             style = MaterialTheme.typography.bodySmall
@@ -367,6 +371,7 @@ fun AiTeacherCard(refresh: Int) {
     var importing by remember { mutableStateOf(false) }
     var downProgress by remember { mutableStateOf<Pair<Long, Long>?>(null) }
     var downName by remember { mutableStateOf("") }
+    var expanded by remember(refresh) { mutableStateOf(false) }
     val picker = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
@@ -393,87 +398,112 @@ fun AiTeacherCard(refresh: Int) {
             modifier = Modifier.padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(
-                text = "\uD83E\uDDE0 AI judge \u2014 offline on your phone",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = if (ready)
-                    "Active: an open-source model on your phone reads every written answer and decides if it is correct \u2014 even different wordings that a simple checker would call wrong."
-                else
-                    "Your written answers are judged by the built-in checker. Tap Download below to get a small open-source AI (Gemma 3 1B) straight into the app — one tap, its own progress bar, nothing else needed.\n\nAfter that, judging runs fully offline on your phone, and it accepts different wordings a simple checker would call wrong.",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            if (importing) Text("Copying model file \u2026 this can take a minute.")
-            if (status.isNotBlank()) Text(status, color = MaterialTheme.colorScheme.tertiary)
-            if (downProgress != null) {
-                val (d, t) = downProgress!!
-                LinearProgressIndicator(
-                    progress = { (d.toDouble() / t.coerceAtLeast(1)).toFloat() },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Text(
-                    "Downloading ${downName} \u2014 ${d / (1024 * 1024)} of ${t / (1024 * 1024)} MB",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            } else if (!ready) {
-                Button(
-                    onClick = {
-                        downName = "AI model"
-                        status = ""
-                        scope.launch(Dispatchers.IO) {
-                            var ok = false
-                            for (model in AiJudge.downloadableModels) {
-                                kotlinx.coroutines.withContext(Dispatchers.Main) { downName = model.name }
-                                ok = AiJudge.downloadBlocking(context, model.url) { d, t ->
-                                    downProgress = d to t
-                                }
-                                if (ok) break
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "\uD83E\uDDE0 AI judge (optional)",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = when {
+                            importing -> "Importing model\u2026"
+                            downProgress != null -> {
+                                val (d, t) = downProgress!!
+                                "Downloading \u2014 ${d / (1024 * 1024)} of ${t / (1024 * 1024)} MB"
                             }
-                            kotlinx.coroutines.withContext(Dispatchers.Main) {
-                                downProgress = null
-                                ready = ok
-                                status = if (ok)
-                                    "Model downloaded \u2014 the AI judge is now active."
-                                else
-                                    "Download failed \u2014 check your internet, or use Import below."
-                            }
-                        }
-                    },
-                    enabled = !importing,
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("\u2b07 Download the AI judge (529 MB, one tap)") }
-                Button(
-                    onClick = { picker.launch("*/*") },
-                    enabled = !importing,
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Or import a model file from your phone") }
-            } else {
-                Text(
-                    text = "Installed: " + AiJudge.modelFile(context).name +
-                        " (" + AiJudge.modelFile(context).length() / (1024 * 1024) + " MB)",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Button(
-                    onClick = { picker.launch("*/*") },
-                    enabled = !importing,
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Replace the model \u2014 pick a file") }
-                OutlinedButton(
-                    onClick = {
-                        AiJudge.deleteModel(context)
-                        ready = false
-                        status = "Model deleted \u2014 the built-in checker judges again."
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Delete the model (free up space)") }
+                            ready -> "Installed \u2014 judging your written answers, offline."
+                            else -> "A small open-source AI can judge your written answers."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                TextButton(onClick = { expanded = !expanded }) {
+                    Text(if (expanded) "Hide" else "Open")
+                }
             }
-            Text(
-                text = "How to get a model: on your computer or phone browser, download a small open-source model in MediaPipe .task format (Gemma 3 1B, about 550 MB) or a GGUF file (Qwen 0.6B, about 350 MB). Then tap Import and pick the file. It runs fully offline, with no talking \u2014 it only judges your answers.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (expanded) {
+                Text(
+                    text = "Written answers are judged by the built-in checker. Download a small open-source AI (Gemma 3 1B) and it will judge them instead \u2014 accepting different wordings a simple checker would call wrong. It never talks; it only judges, fully offline.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                if (status.isNotBlank()) {
+                    Text(text = status, color = MaterialTheme.colorScheme.tertiary)
+                }
+                when {
+                    downProgress != null -> {
+                        val (d, t) = downProgress!!
+                        LinearProgressIndicator(
+                            progress = { (d.toDouble() / t.coerceAtLeast(1)).toFloat() },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Text(
+                            text = "Downloading ${downName} \u2014 keep the app open",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+
+                    !ready -> {
+                        Button(
+                            onClick = {
+                                downName = "AI model"
+                                status = ""
+                                scope.launch(Dispatchers.IO) {
+                                    var ok = false
+                                    for (model in AiJudge.downloadableModels) {
+                                        kotlinx.coroutines.withContext(Dispatchers.Main) { downName = model.name }
+                                        ok = AiJudge.downloadBlocking(context, model.url) { d, t ->
+                                            downProgress = d to t
+                                        }
+                                        if (ok) break
+                                    }
+                                    kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                        downProgress = null
+                                        ready = ok
+                                        status = if (ok)
+                                            "Model downloaded \u2014 the AI judge is now active."
+                                        else
+                                            "Download failed \u2014 check your internet, or use Import below."
+                                    }
+                                }
+                            },
+                            enabled = !importing,
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("\u2b07 Download the AI (529 MB)") }
+                        Button(
+                            onClick = { picker.launch("*/*") },
+                            enabled = !importing,
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("Or import a model file from your phone") }
+                        Text(
+                            text = "The model is 529 MB and downloads once; afterwards everything runs offline. You can delete it anytime to free space.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    else -> {
+                        Button(
+                            onClick = { picker.launch("*/*") },
+                            enabled = !importing,
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("Replace the model \u2014 pick a file") }
+                        OutlinedButton(
+                            onClick = {
+                                AiJudge.deleteModel(context)
+                                ready = false
+                                status = "Model deleted \u2014 the built-in checker judges again."
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("Delete the model (free up space)") }
+                    }
+                }
+            }
         }
     }
 }
