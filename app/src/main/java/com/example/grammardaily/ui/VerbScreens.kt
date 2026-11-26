@@ -367,7 +367,8 @@ fun VerbSettingsScreen(
 fun AiTeacherCard(refresh: Int) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var ready by remember(refresh) { mutableStateOf(AiJudge.isModelReady(context)) }
+    var ready by remember(refresh) { mutableStateOf(AiJudge.isModelReady(context) && !AiJudge.isDisabled(context)) }
+    var disabled by remember(refresh) { mutableStateOf(AiJudge.isDisabled(context)) }
     var status by remember(refresh) { mutableStateOf("") }
     var importing by remember { mutableStateOf(false) }
     var downProgress by remember { mutableStateOf<Pair<Long, Long>?>(null) }
@@ -417,7 +418,8 @@ fun AiTeacherCard(refresh: Int) {
                                 val (d, t) = downProgress!!
                                 "Downloading \u2014 ${d / (1024 * 1024)} of ${t / (1024 * 1024)} MB"
                             }
-                            ready -> "Installed \u2014 judging your written answers, offline."
+                            ready && !disabled -> "Installed \u2014 judging your written answers, offline."
+                            disabled -> "The AI model could not run \u2014 the built-in checker judges instead."
                             else -> "A small open-source AI can judge your written answers."
                         },
                         style = MaterialTheme.typography.bodySmall,
@@ -435,6 +437,13 @@ fun AiTeacherCard(refresh: Int) {
                 )
                 if (status.isNotBlank()) {
                     Text(text = status, color = MaterialTheme.colorScheme.tertiary)
+                }
+                if (disabled) {
+                    Text(
+                        text = "The AI model failed to run on this phone \u2014 the built-in checker judges again. Delete the model, then download it again to try.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
                 when {
                     downProgress != null -> {
@@ -497,6 +506,7 @@ fun AiTeacherCard(refresh: Int) {
                         OutlinedButton(
                             onClick = {
                                 AiJudge.deleteModel(context)
+                                disabled = false
                                 ready = false
                                 status = "Model deleted \u2014 the built-in checker judges again."
                             },

@@ -44,5 +44,10 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/verb_widget_info" />
         </receiver>
+        <service
+            android:name=".ai.AiJudgeService"
+            android:exported="false"
+            android:process=":ai" />
+
     </application>
 </manifest>

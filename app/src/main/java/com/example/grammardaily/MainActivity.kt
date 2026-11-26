@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import com.example.grammardaily.data.AiJudge
 import com.example.grammardaily.data.Placement
 import com.example.grammardaily.data.ProgressStore
 import com.example.grammardaily.data.ExerciseEngine
@@ -74,7 +75,8 @@ fun AppRoot(verbCardRequest: MutableState<Boolean>) {
         }
         ReminderWorker.schedule(context.applicationContext)
         VerbRotationWorker.schedule(context.applicationContext)
-    }
+        AiJudge.warmUp(context.applicationContext)
+        }
 
     var screen by remember { mutableStateOf<AppScreen>(AppScreen.Home) }
     var homeRefresh by remember { mutableIntStateOf(0) }

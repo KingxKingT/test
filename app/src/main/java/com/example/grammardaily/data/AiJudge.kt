@@ -1,11 +1,20 @@
 package com.example.grammardaily.data
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
-import com.google.mediapipe.tasks.genai.llminference.LlmInference
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.ResultReceiver
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
+import kotlin.coroutines.resume
 
 data class JudgeResult(
     val correct: Boolean,
@@ -17,12 +26,16 @@ object AiJudge {
 
     private const val DIR = "ai_teacher"
     private const val FILE = "teacher.task"
+    private const val PREFS = "ai_teacher_state"
+    private const val KEY_TIMEOUT_COUNT = "timeout_count"
+    private const val KEY_DISABLED = "disabled"
+    private const val MAX_TIMEOUTS = 3
+    private const val ANSWER_TIMEOUT_MS = 90_000L
 
-    @Volatile
-    private var llm: LlmInference? = null
-
-    @Volatile
-    private var loadFailed = false
+    const val KEY_PROMPT = "judge_prompt"
+    const val KEY_RECEIVER = "judge_receiver"
+    const val KEY_RESPONSE = "judge_response"
+    const val KEY_ERROR = "judge_error"
 
     fun modelFile(context: Context): File {
         val dir = File(context.filesDir, DIR)
@@ -32,13 +45,37 @@ object AiJudge {
 
     fun isModelReady(context: Context): Boolean = modelFile(context).length() > 1_000_000
 
+    private fun aiPrefs(context: Context) =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    fun isDisabled(context: Context): Boolean =
+        aiPrefs(context).getBoolean(KEY_DISABLED, false)
+
+    private fun markTimeout(context: Context) {
+        val p = aiPrefs(context)
+        val count = p.getInt(KEY_TIMEOUT_COUNT, 0) + 1
+        p.edit()
+            .putInt(KEY_TIMEOUT_COUNT, count)
+            .putBoolean(KEY_DISABLED, count >= MAX_TIMEOUTS)
+            .apply()
+    }
+
+    private fun markSuccess(context: Context) {
+        aiPrefs(context).edit()
+            .putInt(KEY_TIMEOUT_COUNT, 0)
+            .putBoolean(KEY_DISABLED, false)
+            .apply()
+    }
+
+    private fun resetFailures(context: Context) {
+        aiPrefs(context).edit()
+            .putInt(KEY_TIMEOUT_COUNT, 0)
+            .putBoolean(KEY_DISABLED, false)
+            .apply()
+    }
+
     fun deleteModel(context: Context) {
-        try {
-            llm?.close()
-        } catch (e: Exception) {
-        }
-        llm = null
-        loadFailed = false
+        resetFailures(context)
         val f = modelFile(context)
         if (f.exists()) f.delete()
     }
@@ -56,37 +93,105 @@ object AiJudge {
             }
             if (target.exists()) target.delete()
             tmp.renameTo(target)
-            llm = null
-            loadFailed = false
+            resetFailures(context)
+            warmUp(context)
             true
         } catch (e: Exception) {
             false
         }
     }
 
-    private fun ensureLoaded(context: Context): LlmInference? {
-        if (isModelReady(context)) {
-            val existing = llm
-            if (existing != null) return existing
-            if (!loadFailed) {
-                try {
-                    val options = LlmInference.LlmInferenceOptions.builder()
-                        .setModelPath(modelFile(context).absolutePath)
-                        .setMaxTokens(256)
-                        .setTopK(1)
-                        .setTemperature(0.0f)
-                        .build()
-                    llm = LlmInference.createFromOptions(context.applicationContext, options)
-                } catch (e: Exception) {
-                    loadFailed = true
-                    llm = null
+    fun warmUp(context: Context) {
+        if (isDisabled(context) || !isModelReady(context)) return
+        try {
+            context.applicationContext.startService(
+                Intent(context.applicationContext, AiJudgeService::class.java)
+            )
+        } catch (t: Throwable) {
+        }
+    }
+
+    @SuppressLint("UnsafeOptInUsageError")
+    private fun serviceAskBlocking(context: Context, prompt: String): String? {
+        return runBlocking {
+            withTimeoutOrNull(ANSWER_TIMEOUT_MS) {
+                suspendCancellableCoroutine { cont ->
+                    val receiver = object : ResultReceiver(Handler(Looper.getMainLooper())) {
+                        override fun onReceiveResult(resultCode: Int, resultData: Bundle?) {
+                            val resp = resultData?.getString(KEY_RESPONSE)
+                            if (cont.isActive) cont.resume(resp)
+                        }
+                    }
+                    try {
+                        val intent = Intent(context.applicationContext, AiJudgeService::class.java)
+                            .putExtra(KEY_PROMPT, prompt)
+                            .putExtra(KEY_RECEIVER, receiver)
+                        context.applicationContext.startService(intent)
+                    } catch (t: Throwable) {
+                        if (cont.isActive) cont.resume(null)
+                    }
                 }
             }
         }
-        return llm
     }
 
-    fun aiReady(context: Context): Boolean = ensureLoaded(context) != null
+    data class DownloadableModel(val name: String, val sizeMb: Int, val url: String)
+
+    val downloadableModels = listOf(
+        DownloadableModel(
+            "Gemma 3 1B (recommended, 529 MB)",
+            529,
+            "https://huggingface.co/ekyra15/vaya-gemma3-1b-it-int4/resolve/main/gemma3-1b-it-int4.task"
+        ),
+        DownloadableModel(
+            "Gemma 3 1B mirror (529 MB)",
+            529,
+            "https://huggingface.co/meldgaard/ilt-gemma3-1b-it-litert/resolve/main/gemma3-1b-it.task"
+        )
+    )
+
+    fun downloadBlocking(context: Context, url: String, onProgress: (downloaded: Long, total: Long) -> Unit): Boolean {
+        val target = modelFile(context)
+        val tmp = File(target.absolutePath + ".downloading")
+        try {
+            tmp.outputStream().use { output ->
+                val conn = URL(url).openConnection() as HttpURLConnection
+                conn.instanceFollowRedirects = true
+                conn.connectTimeout = 30000
+                conn.readTimeout = 60000
+                conn.connect()
+                if (conn.responseCode !in 200..299) {
+                    conn.disconnect()
+                    return false
+                }
+                val total = conn.contentLengthLong
+                conn.inputStream.use { input ->
+                    val buf = ByteArray(1 shl 16)
+                    var read = 0L
+                    var n = input.read(buf)
+                    while (n >= 0) {
+                        output.write(buf, 0, n)
+                        read += n
+                        if (total > 0) onProgress(read, total)
+                        n = input.read(buf)
+                    }
+                }
+                conn.disconnect()
+            }
+            if (tmp.length() < 1_000_000) {
+                tmp.delete()
+                return false
+            }
+            if (target.exists()) target.delete()
+            tmp.renameTo(target)
+            resetFailures(context)
+            warmUp(context)
+            return true
+        } catch (e: Exception) {
+            tmp.delete()
+            return false
+        }
+    }
 
     private fun tokens(text: String): List<String> =
         ExerciseEngine.normalize(text)
@@ -155,64 +260,7 @@ object AiJudge {
         return null
     }
 
-
-    data class DownloadableModel(val name: String, val sizeMb: Int, val url: String)
-
-    val downloadableModels = listOf(
-        DownloadableModel(
-            "Gemma 3 1B (recommended, 529 MB)",
-            529,
-            "https://huggingface.co/ekyra15/vaya-gemma3-1b-it-int4/resolve/main/gemma3-1b-it-int4.task"
-        ),
-        DownloadableModel(
-            "Gemma 3 1B mirror (529 MB)",
-            529,
-            "https://huggingface.co/meldgaard/ilt-gemma3-1b-it-litert/resolve/main/gemma3-1b-it.task"
-        )
-    )
-
-    fun downloadBlocking(context: Context, url: String, onProgress: (downloaded: Long, total: Long) -> Unit): Boolean {
-        val target = modelFile(context)
-        val tmp = File(target.absolutePath + ".downloading")
-        try {
-            tmp.outputStream().use { output ->
-                val conn = URL(url).openConnection() as HttpURLConnection
-                conn.instanceFollowRedirects = true
-                conn.connectTimeout = 30000
-                conn.readTimeout = 60000
-                conn.connect()
-                if (conn.responseCode !in 200..299) {
-                    conn.disconnect()
-                    return false
-                }
-                val total = conn.contentLengthLong
-                conn.inputStream.use { input ->
-                    val buf = ByteArray(1 shl 16)
-                    var read = 0L
-                    var n = input.read(buf)
-                    while (n >= 0) {
-                        output.write(buf, 0, n)
-                        read += n
-                        if (total > 0) onProgress(read, total)
-                        n = input.read(buf)
-                    }
-                }
-                conn.disconnect()
-            }
-            if (tmp.length() < 1_000_000) {
-                tmp.delete()
-                return false
-            }
-            if (target.exists()) target.delete()
-            tmp.renameTo(target)
-            llm = null
-            loadFailed = false
-            return true
-        } catch (e: Exception) {
-            tmp.delete()
-            return false
-        }
-    }
+    private val fallbackNote = "The right answer is shown below \u2014 compare it with yours."
 
     private fun writtenSummary(results: List<ExerciseResult>): String {
         val typed = results.filter { it.given != null && it.given!!.isNotBlank() }
@@ -228,8 +276,7 @@ object AiJudge {
         scores: List<Triple<Topic, Int, Int>>,
         results: List<ExerciseResult>
     ): String {
-        val model = ensureLoaded(context)
-        if (model != null) {
+        if (!isDisabled(context) && isModelReady(context)) {
             val scoreLines = scores.joinToString("\n") { (topic, c, t) ->
                 "${topic.id} ${topic.title}: $c of $t correct"
             }
@@ -243,12 +290,9 @@ object AiJudge {
                 append("LEVEL: <one letter-number code>\n")
                 append("- <one short line what to learn, max 5 lines, simple words>")
             }
-            val raw = try {
-                model.generateResponse(prompt)
-            } catch (e: Exception) {
-                null
-            }
+            val raw = serviceAskBlocking(context, prompt)
             if (!raw.isNullOrBlank()) {
+                markSuccess(context)
                 val lines = raw.trim().lines().filter { it.isNotBlank() }
                 val levelLine = lines.firstOrNull { it.uppercase().contains("LEVEL") }
                     ?.let { it.substringAfter(":").trim().take(30) }
@@ -260,6 +304,8 @@ object AiJudge {
                         bullets.forEach { append(it.trim()).append("\n") }
                     }.trim()
                 }
+            } else {
+                markTimeout(context)
             }
         }
         val weak = scores.filter { (topic, c, t) -> t > 0 && c < t }
@@ -280,47 +326,40 @@ object AiJudge {
     fun judgeBlocking(context: Context, exercise: Exercise, given: String): JudgeResult {
         heuristic(context, exercise, given)?.let { return it }
 
-        val model = ensureLoaded(context)
-        if (model != null) {
-            val target = exercise.accepted.firstOrNull() ?: exercise.answer
-            val prompt = buildString {
-                append("You are a strict but fair grammar teacher. ")
-                append("The task: ").append(exercise.prompt).append("\n")
-                if (exercise.sentence.isNotBlank()) {
-                    append("Sentence: ").append(exercise.sentence).append("\n")
-                }
-                append("Model answer: ").append(target).append("\n")
-                append("Student answer: ").append(given.trim()).append("\n")
-                append("Does the student answer complete the task with correct grammar, ")
-                append("even if the wording is different? ")
-                append("Reply with exactly one word: YES or NO.")
-            }
-            val raw = try {
-                model.generateResponse(prompt)
-            } catch (e: Exception) {
-                return JudgeResult(false, "The right answer is shown below \u2014 compare it with yours.", false)
-            }
-            val verdict = raw.trim().uppercase()
-            return if (verdict.contains("YES") && !verdict.contains("NO")) {
-                JudgeResult(true, "The AI judge accepted your answer.", true)
-            } else {
-                JudgeResult(false, "The right answer is shown below \u2014 compare it with yours.", true)
-            }
+        if (isDisabled(context) || !isModelReady(context)) {
+            return JudgeResult(false, fallbackNote, false)
         }
 
-        return JudgeResult(false, "The right answer is shown below \u2014 compare it with yours.", false)
+        val target = exercise.accepted.firstOrNull() ?: exercise.answer
+        val prompt = buildString {
+            append("You are a strict but fair grammar teacher. ")
+            append("The task: ").append(exercise.prompt).append("\n")
+            if (exercise.sentence.isNotBlank()) {
+                append("Sentence: ").append(exercise.sentence).append("\n")
+            }
+            append("Model answer: ").append(target).append("\n")
+            append("Student answer: ").append(given.trim()).append("\n")
+            append("Does the student answer complete the task with correct grammar, ")
+            append("even if the wording is different? ")
+            append("Reply with exactly one word: YES or NO.")
+        }
+        val raw = serviceAskBlocking(context, prompt)
+        return if (raw.isNullOrBlank()) {
+            markTimeout(context)
+            JudgeResult(false, fallbackNote, false)
+        } else {
+            markSuccess(context)
+            val verdict = raw.trim().uppercase()
+            if (verdict.contains("YES") && !verdict.contains("NO")) {
+                JudgeResult(true, "The AI judge accepted your answer.", true)
+            } else {
+                JudgeResult(false, fallbackNote, true)
+            }
+        }
     }
 
     suspend fun judge(context: Context, exercise: Exercise, given: String): JudgeResult =
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
             judgeBlocking(context, exercise, given)
         }
-
-    fun close(context: Context) {
-        try {
-            llm?.close()
-        } catch (e: Exception) {
-        }
-        llm = null
-    }
 }
