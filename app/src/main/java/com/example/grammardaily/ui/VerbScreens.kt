@@ -57,6 +57,7 @@ fun VerbExerciseScreen(
     val scope = rememberCoroutineScope()
     var descriptor by remember { mutableStateOf(VerbStore.currentCard(context) ?: "go|0|0") }
     var solved by remember { mutableStateOf(false) }
+    var lastCorrect by remember { mutableStateOf(false) }
 
     val parts = descriptor.split("|")
     val event = remember(descriptor) {
@@ -128,12 +129,13 @@ fun VerbExerciseScreen(
             ExerciseItem(
                 exercise = exercise,
                 showHint = true,
-                onAnswered = { _, _ -> },
+                onAnswered = { correct, _ -> lastCorrect = correct },
+                onAppealed = { lastCorrect = true },
                 onNext = {
                     solved = true
                     ProgressStore.recordAnswers(
                         context,
-                        listOf(ExerciseResult("verb", exercise.kind, true))
+                        listOf(ExerciseResult("verb", exercise.kind, lastCorrect))
                     )
                 },
                 nextLabel = "Next card"

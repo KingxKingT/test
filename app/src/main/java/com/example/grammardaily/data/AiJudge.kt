@@ -314,7 +314,7 @@ object AiJudge {
             .sortedBy { (topic, c, t) -> c.toDouble() / t }
             .take(3)
         return buildString {
-            append("Checked your answers without the AI model (import one below for an AI-judged report).\n")
+            append("Checked your answers without the AI model. Download one from the AI judge card on the Home screen to get AI-judged reports.\n")
             append("Level: " + level.code + " \u2014 " + level.title + ".\n")
             if (weak.isEmpty()) {
                 append("No weak topics in this test \u2014 keep going with your daily lessons.")

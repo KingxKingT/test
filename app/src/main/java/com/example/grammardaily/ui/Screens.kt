@@ -161,7 +161,7 @@ fun HomeScreen(
                     )
                     Text(
                         text = if (current.streakDays > 0) "\uD83D\uDD25 ${current.streakDays} d"
-                        else "day 0",
+                        else "start your streak today",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -212,8 +212,18 @@ fun HomeScreen(
                             OutlinedButton(
                                 onClick = { onExtraPractice(todayTopic) },
                                 modifier = Modifier.fillMaxWidth()
-                            ) { Text("Extra practice (nothing at stake)") }
+                            ) { Text("Extra practice of today's lesson") }
                         }
+                    }
+
+                    else -> {
+                        Button(
+                            onClick = {
+                                levelTopics.firstOrNull { it.id !in current.masteredTopicIds }
+                                    ?.let(onExtraPractice)
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("Practice something from your level") }
                     }
                 }
             }

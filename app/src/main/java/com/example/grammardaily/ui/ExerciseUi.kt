@@ -394,6 +394,11 @@ fun ExerciseRunner(
     if (index >= exercises.size) {
         val correct = results.value.count { it.correct }
         val passed = correct.toDouble() / exercises.size >= passFraction
+        val resultEmoji = when {
+            correct == exercises.size -> "\uD83C\uDF89"
+            passed -> "\u2705"
+            else -> "\uD83D\uDCAA"
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -403,7 +408,7 @@ fun ExerciseRunner(
         ) {
             Spacer(modifier = Modifier.weight(0.3f))
             Text(
-                text = if (correct == exercises.size) "\uD83C\uDF89" else "\u2705",
+                text = resultEmoji,
                 style = MaterialTheme.typography.displaySmall
             )
             Text(text = "$correct / ${exercises.size}", style = MaterialTheme.typography.displaySmall)
