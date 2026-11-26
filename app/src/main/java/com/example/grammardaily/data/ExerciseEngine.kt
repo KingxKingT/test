@@ -97,6 +97,20 @@ object ExerciseEngine {
         )
     }
 
+    fun writeExercise(topicId: String): Exercise? {
+        val task = WriteBank.tasks[topicId] ?: return null
+        return Exercise(
+            topicId = topicId,
+            kind = ExKind.WRITE,
+            prompt = task.starter,
+            sentence = task.example,
+            answer = task.example,
+            accepted = listOf(task.example),
+            explanation = "Nobody has one right sentence here. The AI judge reads yours.",
+            hint = "Speak the pattern in your head first, then type it."
+        )
+    }
+
     fun listenPool(topicId: String): List<Exercise> =
         listOfNotNull(reorderSentence(topicId)).map { sentence ->
             Exercise(
@@ -122,6 +136,7 @@ object ExerciseEngine {
             addAll(types.take(2))
             reorderExercise(topicId)?.let { add(it) }
             fixExercise(topicId)?.let { add(it) }
+            writeExercise(topicId)?.let { add(it) }
         }
         val fillers = (types.drop(2) + listenPool(topicId)).shuffled().toMutableList()
         val result = buildList {
@@ -134,13 +149,14 @@ object ExerciseEngine {
     }
 
     fun reviewExercise(topicId: String, attempt: Int): Exercise? {
-        val cycle = listOf(ExKind.TYPE, ExKind.REORDER, ExKind.FIX, ExKind.LISTEN, ExKind.MCQ)
+        val cycle = listOf(ExKind.TYPE, ExKind.REORDER, ExKind.FIX, ExKind.LISTEN, ExKind.WRITE, ExKind.MCQ)
         val kind = cycle[attempt % cycle.size]
         val primary: Exercise? = when (kind) {
             ExKind.TYPE -> typePool(topicId).randomOrNull()
             ExKind.REORDER -> reorderExercise(topicId)
             ExKind.FIX -> fixExercise(topicId)
             ExKind.LISTEN -> listenPool(topicId).randomOrNull()
+            ExKind.WRITE -> writeExercise(topicId)
             ExKind.MCQ -> mcqPool(topicId).randomOrNull()?.let { mcqExercise(it) }
         }
         if (primary != null) return primary
@@ -149,6 +165,7 @@ object ExerciseEngine {
             reorderExercise(topicId),
             fixExercise(topicId),
             listenPool(topicId).randomOrNull(),
+            writeExercise(topicId),
             mcqPool(topicId).randomOrNull()?.let { mcqExercise(it) }
         ).filterNotNull().randomOrNull()
     }
@@ -167,6 +184,7 @@ object ExerciseEngine {
                     ExKind.FIX -> fixExercise(topic.id)
                     ExKind.MCQ -> mcqHardest
                     ExKind.LISTEN -> null
+                    ExKind.WRITE -> null
                 } ?: typePool(topic.id).lastOrNull()
                     ?: reorderExercise(topic.id)
                     ?: fixExercise(topic.id)

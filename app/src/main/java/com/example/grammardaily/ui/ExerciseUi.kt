@@ -109,6 +109,7 @@ fun ExerciseItem(
     var judgedNote by remember(exercise) { mutableStateOf<String?>(null) }
     var judging by remember(exercise) { mutableStateOf(false) }
     var appealed by remember(exercise) { mutableStateOf(false) }
+    var attempts by remember(exercise) { mutableIntStateOf(0) }
     var selected by remember(exercise) { mutableIntStateOf(-1) }
     var placedIdx by remember(exercise) { mutableStateOf(listOf<Int>()) }
     var showAudioText by remember(exercise) { mutableStateOf(false) }
@@ -138,6 +139,13 @@ fun ExerciseItem(
                 style = MaterialTheme.typography.bodyLarge
             )
             Text(text = exercise.prompt, style = MaterialTheme.typography.titleLarge)
+        } else if (exercise.kind == ExKind.WRITE) {
+            Text(text = exercise.prompt, style = MaterialTheme.typography.titleLarge)
+            Text(
+                text = exercise.sentence,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
         } else {
             Text(text = exercise.prompt, style = MaterialTheme.typography.titleLarge)
             LaunchedEffect(exercise) { Audio.init(context) }
@@ -224,7 +232,7 @@ fun ExerciseItem(
                 }
             }
 
-            ExKind.TYPE, ExKind.FIX, ExKind.LISTEN -> {
+            ExKind.TYPE, ExKind.FIX, ExKind.LISTEN, ExKind.WRITE -> {
                 if (!checked) {
                     OutlinedTextField(
                         value = typed,
@@ -239,10 +247,19 @@ fun ExerciseItem(
                             scope.launch {
                                 val verdict = AiJudge.judge(context, exercise, typed)
                                 judging = false
-                                checked = true
-                                wasCorrect = verdict.correct
-                                judgedNote = verdict.note.takeIf { !verdict.correct }
-                                onAnswered(verdict.correct, typed)
+                                if (verdict.correct) {
+                                    checked = true
+                                    wasCorrect = true
+                                    judgedNote = verdict.note.takeIf { verdict.byAi }
+                                    onAnswered(true, typed)
+                                } else if (attempts == 0) {
+                                    attempts = 1
+                                } else {
+                                    checked = true
+                                    wasCorrect = false
+                                    judgedNote = verdict.note
+                                    onAnswered(false, typed)
+                                }
                             }
                         },
                         enabled = typed.isNotBlank() && !judging,
@@ -254,6 +271,27 @@ fun ExerciseItem(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                    if (attempts > 0 && !judging) {
+                        Text(
+                            text = "\u274C Not yet \u2014 one more try before the answer is shown.",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = Color(0xFFB3261E)
+                        )
+                        if (exercise.hint.isNotBlank()) {
+                            Text(
+                                text = "\uD83D\uDCA1 ${exercise.hint}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.tertiary
+                            )
+                        }
+                        TextButton(onClick = {
+                            checked = true
+                            wasCorrect = true
+                            judgedNote = "You chose to accept your own answer \u2014 compare it with the model answer."
+                            onAppealed()
+                            onAnswered(true, typed)
+                        }) { Text("\uD83D\uDE4F My answer makes sense too") }
                     }
                 }
             }
@@ -303,7 +341,7 @@ fun ExerciseItem(
             }
             if (!wasCorrect && !appealed &&
                 (exercise.kind == ExKind.TYPE || exercise.kind == ExKind.FIX ||
-                    exercise.kind == ExKind.LISTEN)
+                    exercise.kind == ExKind.LISTEN || exercise.kind == ExKind.WRITE)
             ) {
                 TextButton(onClick = {
                     appealed = true

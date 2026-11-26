@@ -47,7 +47,7 @@ data class QuizQuestion(
     val hint: String = ""
 )
 
-enum class ExKind { MCQ, TYPE, REORDER, FIX, LISTEN }
+enum class ExKind { MCQ, TYPE, REORDER, FIX, LISTEN, WRITE }
 
 data class Exercise(
     val topicId: String,

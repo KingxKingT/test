@@ -54,6 +54,16 @@ teaches you one grammar lesson every day until you have mastered the whole path.
    every 2 hours, plus a level/streak home-screen widget showing progress. Tapping
    either widget opens the app.
 
+## Built on learning science (how people learn grammar fastest)
+
+Every method in this app is backed by published second-language-acquisition research:
+
+- **Study a rule on purpose, then practice it** — meta-analyses (Norris & Ortega 2000; Spada & Tomita 2010) found explicit instruction beats hoping to absorb grammar from exposure. Every lesson here shows a short rule first.
+- **Retrieve from memory, don't re-read** — Kim & Webb's 2022 meta-analysis (48 experiments) showed self-testing and spaced recall beat re-studying. Exercises force production; reviews come back on expanding intervals.
+- **Self-correct before seeing the answer** — Lyster & Saito's 2010 meta-analysis found prompts (pushing learners to repair their own error) beat recasts (showing the correct version). So one wrong answer gets a nudge and a second try before the model answer appears.
+- **Produce the pattern yourself, in your own words** — structural priming studies (McDonough and colleagues) show that producing a just-learned pattern, varied across your own vocabulary, builds the abstract rule. That is why every practice set ends with a "write your own sentence" exercise read by the AI judge.
+- **Learn chunks, not just rules** — research on formulaic language (Wray, Conklin & Schmitt) estimates 50–80% of fluent speech is fixed multi-word blocks. Every lesson card includes "say these as one block" chunks.
+
 ## Curriculum (v1)
 
 | Level | Topics |

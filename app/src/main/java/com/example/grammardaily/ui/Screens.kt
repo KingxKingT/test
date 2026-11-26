@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.example.grammardaily.data.Exercise
+import com.example.grammardaily.data.ChunkBank
 import com.example.grammardaily.data.ExerciseEngine
 import com.example.grammardaily.data.GrammarCurriculum
 import com.example.grammardaily.data.Level
@@ -441,6 +442,26 @@ fun LessonScreen(
                                 text = rule.why,
                                 style = MaterialTheme.typography.bodySmall
                             )
+                        }
+                    }
+                }
+                ChunkBank.byTopic[topic.id]?.takeIf { it.isNotEmpty() }?.let { chunks ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "\uD83D\uDCA1 Say these as one block",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            chunks.forEach { chunk ->
+                                Text(text = chunk, style = MaterialTheme.typography.bodyMedium)
+                            }
                         }
                     }
                 }

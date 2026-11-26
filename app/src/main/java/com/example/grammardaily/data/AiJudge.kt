@@ -214,6 +214,7 @@ object AiJudge {
     }
 
     private fun heuristic(context: Context, exercise: Exercise, given: String): JudgeResult? {
+        if (exercise.kind == ExKind.WRITE) return null
         val input = ExerciseEngine.normalize(given)
         if (input.isBlank()) return null
 
@@ -328,13 +329,27 @@ object AiJudge {
         heuristic(context, exercise, given)?.let { return it }
 
         if (isDisabled(context) || !isModelReady(context)) {
-            return JudgeResult(false, fallbackNote, false)
+            return if (exercise.kind == ExKind.WRITE) {
+                JudgeResult(true, "No AI model installed, so nobody checked it \u2014 compare yours with this:", false)
+            } else {
+                JudgeResult(false, fallbackNote, false)
+            }
         }
 
         val target = exercise.accepted.firstOrNull() ?: exercise.answer
         val prompt = buildString {
             append("You are a strict but fair grammar teacher. ")
+            if (exercise.kind == ExKind.WRITE) {
+                append("The student was asked to write their own sentence. ")
+                append("The task: ").append(exercise.prompt).append("\n")
+                append("Example of the pattern (they must not just copy it): ").append(exercise.answer).append("\n")
+                append("Student sentence: ").append(given.trim()).append("\n")
+                append("Is the student's sentence correct English and does it use the same pattern, ")
+                append("without copying the example word for word? ")
+                append("Reply with exactly one word: YES or NO.")
+            } else {
             append("The task: ").append(exercise.prompt).append("\n")
+            }
             if (exercise.sentence.isNotBlank()) {
                 append("Sentence: ").append(exercise.sentence).append("\n")
             }
