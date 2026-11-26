@@ -72,6 +72,7 @@ private fun shuffledOptions(question: QuizQuestion): List<ShownOption> {
 fun HomeScreen(
     refresh: Int,
     onStartPlacement: () -> Unit,
+    onSkipTest: () -> Unit,
     onOpenLesson: (Topic) -> Unit,
     onStartLevelUp: (List<QuizQuestion>) -> Unit,
     onExtraPractice: (Topic) -> Unit,
@@ -99,12 +100,20 @@ fun HomeScreen(
 
         if (!current.placementDone) {
             Text(
-                text = "First, a short full grammar test: 15 mixed questions \u2014 type the missing word, rebuild the sentence, fix the mistake and pick the right form. It shows your level and what to study next.",
+                text = "Welcome! No test is needed to start learning \u2014 you can simply begin. If you want, a short 15-question check finds your level and what to study first.",
                 style = MaterialTheme.typography.bodyLarge
             )
             Button(onClick = onStartPlacement, modifier = Modifier.fillMaxWidth()) {
-                Text("Start the grammar test")
+                Text("Check my level (15 questions)")
             }
+            OutlinedButton(onClick = onSkipTest, modifier = Modifier.fillMaxWidth()) {
+                Text("No test \u2014 start from B1")
+            }
+            Text(
+                text = "You can change your level later at any time.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             return@Column
         }
 
@@ -269,6 +278,8 @@ fun HomeScreen(
             }
         }
 
+        Spacer(modifier = Modifier.height(4.dp))
+        AiTeacherCard(refresh = homeRefresh)
         Spacer(modifier = Modifier.height(4.dp))
         OutlinedButton(onClick = onStartPlacement, modifier = Modifier.fillMaxWidth()) {
             Text("Retake the placement test")

@@ -36,7 +36,10 @@ import com.example.grammardaily.data.ProgressStore
 import com.example.grammardaily.data.VerbBank
 import com.example.grammardaily.data.VerbStore
 import com.example.grammardaily.widget.VerbWidget
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.glance.appwidget.updateAll
+import com.example.grammardaily.data.AiJudge
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -344,10 +347,73 @@ fun VerbSettingsScreen(
             }
         }
 
+        AiTeacherCard(refresh = refresh)
+
         Spacer(modifier = Modifier.weight(1f))
         Text(
             text = "The widget shows your verbs in a new tense and form several times a day, at random moments during your waking hours. Tap the card for a quick fill-the-blank or rebuild exercise.",
             style = MaterialTheme.typography.bodySmall
         )
+    }
+}
+
+@Composable
+fun AiTeacherCard(refresh: Int) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var ready by remember(refresh) { mutableStateOf(AiJudge.isModelReady(context)) }
+    var status by remember(refresh) { mutableStateOf("") }
+    var importing by remember { mutableStateOf(false) }
+    val picker = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            importing = true
+            scope.launch(Dispatchers.IO) {
+                val ok = AiJudge.importModel(context, uri)
+                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                    importing = false
+                    ready = ok
+                    status = if (ok) {
+                        val mb = AiJudge.modelFile(context).length() / (1024 * 1024)
+                        "Model installed ($mb MB) \u2014 the AI judge is now active."
+                    } else {
+                        "Import failed \u2014 the file could not be read or is too small."
+                    }
+                }
+            }
+        }
+    }
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                text = "\uD83E\uDDE0 AI judge \u2014 offline on your phone",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = if (ready)
+                    "Active: an open-source model on your phone reads every written answer and decides if it is correct \u2014 even different wordings that a simple checker would call wrong."
+                else
+                    "Your written answers are judged by the built-in checker. Import one small open-source model (like Gemma or Qwen) and a smarter AI judge will grade them.\n\nNo internet is used \u2014 the model runs on your phone.",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            if (importing) Text("Copying model file \u2026 this can take a minute.")
+            if (status.isNotBlank()) Text(status, color = MaterialTheme.colorScheme.tertiary)
+            Button(
+                onClick = { picker.launch("*/*") },
+                enabled = !importing,
+                modifier = Modifier.fillMaxWidth()
+            ) { Text(if (ready) "Replace the model" else "Import a model file") }
+            Text(
+                text = "How to get a model: on your computer or phone browser, download a small open-source model in MediaPipe .task format (Gemma 3 1B, about 550 MB) or a GGUF file (Qwen 0.6B, about 350 MB). Then tap Import and pick the file. It runs fully offline, with no talking \u2014 it only judges your answers.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }

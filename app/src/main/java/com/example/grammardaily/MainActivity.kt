@@ -101,6 +101,10 @@ fun AppRoot(verbCardRequest: MutableState<Boolean>) {
                 is AppScreen.Home -> HomeScreen(
                     refresh = homeRefresh,
                     onStartPlacement = { screen = AppScreen.Placement },
+                    onSkipTest = {
+                        ProgressStore.markPlacement(com.example.grammardaily.data.Level.B1, context)
+                        goHome()
+                    },
                     onOpenLesson = { topic -> screen = AppScreen.Lesson(topic) },
                     onStartLevelUp = { questions -> screen = AppScreen.LevelUpTest(questions) },
                     onExtraPractice = { topic ->
@@ -137,20 +141,17 @@ fun AppRoot(verbCardRequest: MutableState<Boolean>) {
                 is AppScreen.TopicPractice -> ExerciseRunner(
                     title = current.topic.title,
                     subtitle = if (current.daily)
-                        "Pass 4 of 5 and the spaced reviews for this lesson begin."
+                        "Practice on the rule you just learned \u2014 the AI judge grades your writing fairly, and mistakes just mean more teaching."
                     else
                         "Extra practice \u2014 hints help you learn; nothing is at stake.",
                     exercises = current.exercises,
-                    passFraction = LESSON_PASS_FRACTION,
+                    passFraction = 0.0,
                     showHints = true,
-                    passMessage = "Passed \u2014 spaced reviews will keep this rule alive in your memory.",
-                    failMessage = "Not passed \u2014 no problem. The rule and the right answers were shown; try again tomorrow or from the weak-spots card.",
+                    passMessage = "Good work \u2014 spaced reviews are scheduled so this rule stays in your memory.",
+                    failMessage = "Good work \u2014 every mistake you made is now a scheduled review, and the rule will be taught again.",
                     onDone = { results, _, _ ->
                         ProgressStore.recordAnswers(context, results)
-                        if (current.daily &&
-                            results.count { it.correct }.toDouble() /
-                            results.size.coerceAtLeast(1) >= LESSON_PASS_FRACTION
-                        ) {
+                        if (current.daily) {
                             ProgressStore.recordLesson(context, current.topic.id)
                         } else {
                             ProgressStore.recordStreakOnly(context)
@@ -193,6 +194,5 @@ fun AppRoot(verbCardRequest: MutableState<Boolean>) {
     }
 }
 
-private const val LESSON_PASS_FRACTION = 4.0 / 5
 private const val LEVEL_UP_MIN_CORRECT = 6
 private const val LEVEL_UP_PASS_FRACTION = 6.0 / 8

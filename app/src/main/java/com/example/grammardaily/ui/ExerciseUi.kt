@@ -37,6 +37,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.rememberCoroutineScope
+import com.example.grammardaily.data.AiJudge
 import com.example.grammardaily.data.ExKind
 import com.example.grammardaily.data.Exercise
 import com.example.grammardaily.data.ExerciseEngine
@@ -44,6 +46,7 @@ import com.example.grammardaily.data.ExerciseResult
 import com.example.grammardaily.data.Placement
 import com.example.grammardaily.data.PlacementResult
 import com.example.grammardaily.data.Topic
+import kotlinx.coroutines.launch
 
 object Audio {
     @Volatile
@@ -91,12 +94,17 @@ fun ExerciseItem(
     showHint: Boolean,
     onAnswered: (correct: Boolean) -> Unit,
     onNext: (() -> Unit)?,
-    nextLabel: String
+    nextLabel: String,
+    onAppealed: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var typed by remember(exercise) { mutableStateOf("") }
     var checked by remember(exercise) { mutableStateOf(false) }
     var wasCorrect by remember(exercise) { mutableStateOf(false) }
+    var judgedNote by remember(exercise) { mutableStateOf<String?>(null) }
+    var judging by remember(exercise) { mutableStateOf(false) }
+    var appealed by remember(exercise) { mutableStateOf(false) }
     var selected by remember(exercise) { mutableIntStateOf(-1) }
     var placedIdx by remember(exercise) { mutableStateOf(listOf<Int>()) }
     var showAudioText by remember(exercise) { mutableStateOf(false) }
@@ -223,13 +231,26 @@ fun ExerciseItem(
                     )
                     Button(
                         onClick = {
-                            checked = true
-                            wasCorrect = ExerciseEngine.closeEnough(typed, target)
-                            onAnswered(wasCorrect)
+                            judging = true
+                            scope.launch {
+                                val verdict = AiJudge.judge(context, exercise, typed)
+                                judging = false
+                                checked = true
+                                wasCorrect = verdict.correct
+                                judgedNote = verdict.note.takeIf { !verdict.correct }
+                                onAnswered(verdict.correct)
+                            }
                         },
-                        enabled = typed.isNotBlank(),
+                        enabled = typed.isNotBlank() && !judging,
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("Check") }
+                    ) { Text(if (judging) "Judging\u2026" else "Check") }
+                    if (judging) {
+                        Text(
+                            text = "The AI judge is reading your answer\u2026",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
@@ -254,10 +275,13 @@ fun ExerciseItem(
             }
             if (wasCorrect) {
                 Text(
-                    text = "\u2705 Correct!",
+                    text = if (appealed) "\u2705 Accepted \u2014 your version also works" else "\u2705 Correct!",
                     style = MaterialTheme.typography.titleMedium,
                     color = Color(0xFF2E7D32)
                 )
+                if (appealed) {
+                    Text(text = "Model answer: $shownCorrect", style = MaterialTheme.typography.bodyMedium)
+                }
             } else {
                 Text(
                     text = "\u274C The right answer:",
@@ -270,6 +294,25 @@ fun ExerciseItem(
                 Text(
                     text = exercise.explanation,
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (!wasCorrect && !appealed &&
+                (exercise.kind == ExKind.TYPE || exercise.kind == ExKind.FIX ||
+                    exercise.kind == ExKind.LISTEN)
+            ) {
+                TextButton(onClick = {
+                    appealed = true
+                    wasCorrect = true
+                    judgedNote = "You chose to accept your own answer \u2014 compare it with the model answer to see the difference."
+                    onAppealed()
+                }) {
+                    Text("\uD83D\uDE4F My answer makes sense too")
+                }
+            }
+            if (judgedNote != null) {
+                Text(
+                    text = judgedNote!!, style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -362,7 +405,13 @@ fun ExerciseRunner(
                 results.value = results.value + ExerciseResult(exercise.topicId, exercise.kind, correct)
             },
             onNext = { index = index + 1 },
-            nextLabel = if (index + 1 >= exercises.size) "See my result" else "Next question"
+            nextLabel = if (index + 1 >= exercises.size) "See my result" else "Next question",
+            onAppealed = {
+                if (results.value.isNotEmpty()) {
+                    results.value = results.value.dropLast(1) +
+                        results.value.last().copy(correct = true)
+                }
+            }
         )
     }
 }

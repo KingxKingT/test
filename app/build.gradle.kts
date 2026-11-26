@@ -53,4 +53,6 @@ dependencies {
     implementation("androidx.glance:glance-material3:1.1.0")
 
     implementation("androidx.work:work-runtime-ktx:2.9.1")
+
+    implementation("com.google.mediapipe:tasks-genai:0.10.14")
 }
