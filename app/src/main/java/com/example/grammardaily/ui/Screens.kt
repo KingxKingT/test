@@ -26,8 +26,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.example.grammardaily.data.GrammarCurriculum
 import com.example.grammardaily.data.Level
@@ -36,6 +42,7 @@ import com.example.grammardaily.data.ProgressStore
 import com.example.grammardaily.data.ProgressState
 import com.example.grammardaily.data.QuestionBank
 import com.example.grammardaily.data.QuizQuestion
+import com.example.grammardaily.data.Rules
 import com.example.grammardaily.data.Topic
 
 sealed interface AppScreen {
@@ -293,6 +300,7 @@ fun LessonScreen(
             }
         }
 
+        val rule = remember(topic.id) { Rules.forTopic(topic.id) }
         val ruleUnlocked = discovery == null || discoveryCorrect
         if (ruleUnlocked) {
             if (discovery != null) {
@@ -302,24 +310,105 @@ fun LessonScreen(
                     fontWeight = FontWeight.Bold
                 )
             }
-            Text(text = topic.explanation, style = MaterialTheme.typography.bodyLarge)
-
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        "Examples",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    topic.examples.forEach { example ->
-                        Text(text = "\u2022 $example", style = MaterialTheme.typography.bodyMedium)
+            if (rule != null) {
+                if (rule.timeline.isNotBlank()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Text(
+                            text = rule.timeline,
+                            modifier = Modifier.padding(14.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            "Pattern",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = rule.pattern,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (rule.short.isNotBlank()) {
+                            Text(text = rule.short, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            "Look \u2014 the changing word is colored",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (rule.examples.isNotEmpty()) {
+                            rule.examples.forEach { example ->
+                                HighlightedText(text = "\u2022 $example", style = MaterialTheme.typography.bodyMedium)
+                            }
+                        } else {
+                            topic.examples.forEach { example ->
+                                HighlightedText(text = "\u2022 $example", style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    }
+                }
+                if (rule.wrong.isNotBlank()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "\u2718 ${rule.wrong}",
+                                color = Color(0xFFB3261E),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = "\u2714 ${rule.right}",
+                                color = Color(0xFF2E7D32),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = rule.why,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+            } else {
+                Text(text = topic.explanation, style = MaterialTheme.typography.bodyLarge)
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            "Examples",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        topic.examples.forEach { example ->
+                            Text(text = "\u2022 $example", style = MaterialTheme.typography.bodyMedium)
+                        }
                     }
                 }
             }
-
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
@@ -352,6 +441,28 @@ fun LessonScreen(
             }
         }
     }
+}
+
+@Composable
+fun HighlightedText(text: String, style: TextStyle) {
+    val parts = text.split("**")
+    Text(
+        text = buildAnnotatedString {
+            parts.forEachIndexed { i, part ->
+                if (i % 2 == 1) {
+                    withStyle(
+                        SpanStyle(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    ) { append(part) }
+                } else {
+                    append(part)
+                }
+            }
+        },
+        style = style
+    )
 }
 
 private data class QuizUiState(
