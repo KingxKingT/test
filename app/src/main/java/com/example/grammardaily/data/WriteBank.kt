@@ -399,6 +399,62 @@ object WriteBank {
                 "If the storm had not come, the harvest would have been fine, and we would not be borrowing money now."
             )
         )
+        "B1:quantifiers" to listOf(
+            WriteTask(
+                "Write about your week with countable things. Start with: this week, I had many ",
+                "This week, I had many small problems, but I had little time to worry about them."
+            ),
+            WriteTask(
+                "Write honestly about your time or money. Start with: I don\u2019t have much ",
+                "I don\u2019t have much free time, but I have a lot of energy."
+            ),
+            WriteTask(
+                "Compare two rooms in your home. Start with: my kitchen has ",
+                "My kitchen has a lot of light, but the bedroom has little space."
+            )
+        ),
+        "B1:prepositions" to listOf(
+            WriteTask(
+                "Write what your plans depend on. Start with: my plans depend on ",
+                "My plans depend on the weather and on how much sleep I get."
+            ),
+            WriteTask(
+                "Write one talent and one struggle. Start with: I am good at ",
+                "I am good at cooking, but I am terrible at singing."
+            ),
+            WriteTask(
+                "Write who or what you are waiting for these days. Start with: these days, I am waiting for ",
+                "These days, I am waiting for an answer about the job."
+            )
+        ),
+        "B1:articles-deep" to listOf(
+            WriteTask(
+                "Describe your street using a, the and no word. Start with: there is ",
+                "There is a bakery at the corner; the smell reaches our flat, and tourists love the street."
+            ),
+            WriteTask(
+                "Write what you love in general, with no word. Start with: I love ",
+                "I love old films and quiet mornings."
+            ),
+            WriteTask(
+                "Tell a small first-time story. Start with: yesterday I saw a ",
+                "Yesterday I saw a fox in the garden; the fox was not afraid of me."
+            )
+        ),
+        "B2:phrasal-verbs" to listOf(
+            WriteTask(
+                "Write a promise about something you are stopping. Start with: I am giving up ",
+                "I am giving up late nights, because mornings are better without them."
+            ),
+            WriteTask(
+                "Write about the last time something finished unexpectedly. Start with: we ran out of ",
+                "We ran out of milk on Sunday, and the shops were closed."
+            ),
+            WriteTask(
+                "Write who cares for whom in your family. Start with: in my family, ",
+                "In my family, my aunt looks after my grandmother, and nobody ever gives up on her."
+            )
+        )
     )
 }
 object ChunkBank {
@@ -514,6 +570,22 @@ object ChunkBank {
         "C1:participle-clauses" to listOf(
             "seeing the house, I stopped \u2014 two sentences become one.",
             "the -ing / -ed part keeps the same doer as the main sentence."
+        )
+"B1:quantifiers" to listOf(
+            "Count it \u2192 many, few. One mass \u2192 much, little.",
+            "Not sure? \u201CA lot of\u201D is safe with both."
+        ),
+        "B1:prepositions" to listOf(
+            "good at \u00b7 bad at \u00b7 interested in",
+            "depend on \u00b7 wait for \u00b7 listen to"
+        ),
+        "B1:articles-deep" to listOf(
+            "First time = a \u00b7 known = the \u00b7 all of them = nothing",
+            "the piano, the guitar \u2014 instruments take \u201Cthe\u201D"
+        ),
+        "B2:phrasal-verbs" to listOf(
+            "give up = stop \u00b7 look after = care for \u00b7 run out of = none left",
+            "With it/them, small word jumps: give it up"
         )
     )
 }

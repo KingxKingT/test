@@ -45,6 +45,7 @@ import com.example.grammardaily.ui.QuizScreen
 import com.example.grammardaily.ui.ReviewScreen
 import com.example.grammardaily.ui.VerbExerciseScreen
 import com.example.grammardaily.ui.VerbSettingsScreen
+import com.example.grammardaily.ui.EssayScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -128,6 +129,7 @@ fun AppRoot(verbCardRequest: MutableState<Boolean>) {
                     },
                     onStartReview = { topics -> screen = AppScreen.Review(topics) },
                     onOpenVerbSettings = { screen = AppScreen.VerbSettings },
+                    onOpenEssay = { screen = AppScreen.Essay },
                     textScale = textScale,
                     onTextScale = { v ->
                         textScale = v
@@ -202,6 +204,9 @@ fun AppRoot(verbCardRequest: MutableState<Boolean>) {
                     onExit = { goHome() }
                 )
 
+                AppScreen.Essay -> EssayScreen(
+                    onExit = { screen = AppScreen.Home }
+                )
                 AppScreen.VerbExercise -> VerbExerciseScreen(
                     onDone = { goHome() },
                     onExit = { goHome() }

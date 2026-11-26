@@ -31,7 +31,10 @@ object ExerciseBank {
         "C1:third-mixed" to "If she had taken the map she wouldn\u2019t have got lost",
         "C1:cleft" to "It was Ana who solved the problem yesterday",
         "C1:participle-clauses" to "Having finished the email she closed the laptop"
-    )
+        "B1:quantifiers" to "We do not have much time today",
+        "B1:prepositions" to "Our plans depend on the weather",
+        "B1:articles-deep" to "The dog in the garden is huge",
+        "B2:phrasal-verbs" to "We ran out of milk this morning",    )
 
     val fix: Map<String, Pair<String, String>> = mapOf(
         "A1:be" to Pair("They is very happy today.", "They are very happy today."),
@@ -61,6 +64,10 @@ object ExerciseBank {
         "C1:inversion" to Pair("Never I have heard such a loud noise.", "Never have I heard such a loud noise."),
         "C1:third-mixed" to Pair("If he had asked me, I would tell him the truth.", "If he had asked me, I would have told him the truth."),
         "C1:cleft" to Pair("It was my brother save the old man.", "It was my brother who saved the old man."),
-        "C1:participle-clauses" to Pair("Having wrote the letter, he posted it.", "Having written the letter, he posted it.")
+        "C1:participle-clauses" to Pair("Having wrote the letter, he posted it.", "Having written the letter, he posted it."),
+"B1:quantifiers" to Pair("I have much friends here.", "I have many friends here."),
+        "B1:prepositions" to Pair("She is waiting the bus.", "She is waiting for the bus."),
+        "B1:articles-deep" to Pair("The life in cities is fast.", "Life in cities is fast."),
+        "B2:phrasal-verbs" to Pair("Please turn off it.", "Please turn it off.")
     )
 }

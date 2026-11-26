@@ -244,7 +244,39 @@ object Rules {
             wrong = "Having wrote the email, she closed the laptop.",
             right = "Having written the email, she closed the laptop.",
             why = "After \u201chaving\u201d say written, not wrote."
-        )
+        ),
+        "B1:quantifiers" to RuleSpec(
+            pattern = "[much / little] + water, time   |   [many / few] + friends, days   |   [a lot of] + both",
+            examples = listOf("I don\u2019t have **much** time.", "She has **many** friends here.", "We made **a lot of** mistakes."),
+            short = "Can you count it? \u2192 many, few. One mass? \u2192 much, little. Not sure? \u2192 a lot of.",
+            wrong = "I have much friends here.",
+            right = "I have many friends here.",
+            why = "\u201CFriends\u201D can be counted, so it takes \u201Cmany\u201D."
+        ),
+        "B1:prepositions" to RuleSpec(
+            pattern = "[good / bad] + at   [interested] + in   [depend / rely] + on   [wait / look] + for",
+            examples = listOf("She is **good at** maths.", "It **depends on** the weather.", "I\u2019m **waiting for** the bus."),
+            short = "Some words drag the same little word with them every time. Learn the pair, not the logic.",
+            wrong = "I am waiting the bus.",
+            right = "I am waiting for the bus.",
+            why = "\u201CWait\u201D always carries \u201Cfor\u201D before the thing you wait for."
+        ),
+        "B1:articles-deep" to RuleSpec(
+            pattern = "[a] = first time   [the] = we know which   [no word] = all of them: dogs, music, life",
+            examples = listOf("I bought **a** coat. **The** coat was expensive.", "**Life** is strange sometimes.", "He plays **the** guitar."),
+            short = "First time \u2192 a. Known which \u2192 the. Talking about everything of a kind \u2192 no word.",
+            wrong = "The life in cities is fast.",
+            right = "Life in cities is fast.",
+            why = "\u201CLife\u201D in general takes no word at all."
+        ),
+        "B2:phrasal-verbs" to RuleSpec(
+            pattern = "[verb] + [small word] = new meaning   [give up] = stop   [run out of] = have no more",
+            examples = listOf("Don\u2019t **give up** now.", "She **looks after** her brother.", "We **ran out of** milk."),
+            short = "Small words build new verbs. With \u201Cit\u201D, the small word jumps after: give it up.",
+            wrong = "Don\u2019t give up it.",
+            right = "Don\u2019t give it up.",
+            why = "With \u201Cit/them\u201D, the small word moves after the object."
+        ),
     )
 
     fun forTopic(id: String): RuleSpec? = map[id]

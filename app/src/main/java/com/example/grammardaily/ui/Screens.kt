@@ -61,6 +61,7 @@ sealed interface AppScreen {
     data class Review(val topics: List<Topic>) : AppScreen
     data object VerbSettings : AppScreen
     data object VerbExercise : AppScreen
+    data object Essay : AppScreen
 }
 
 private data class ShownOption(val originalIndex: Int, val text: String, val isCorrect: Boolean)
@@ -83,6 +84,7 @@ fun HomeScreen(
     onExtraPractice: (Topic) -> Unit,
     onStartReview: (List<Topic>) -> Unit,
     onOpenVerbSettings: () -> Unit,
+    onOpenEssay: () -> Unit,
     textScale: Float,
     onTextScale: (Float) -> Unit
 ) {
@@ -284,6 +286,27 @@ fun HomeScreen(
                                     else MaterialTheme.colorScheme.onSurface
                         )
                     }
+                }
+            }
+        }
+
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "\uD83D\uDCDD Weekly essay",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "One longer write every week, judged like an exam",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedButton(onClick = onOpenEssay, modifier = Modifier.fillMaxWidth()) {
+                    Text("Write this week's essay")
                 }
             }
         }

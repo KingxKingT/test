@@ -272,6 +272,32 @@ object AiJudge {
         }
     }
 
+    fun essayJudgeBlocking(context: Context, essayText: String): String {
+        if (essayText.isBlank()) {
+            return "Write something first, then the judge will grade it."
+        }
+        val prompt = "You are a strict but fair English exam judge. The learner wrote this essay:\n\n" +
+            essayText.trim() +
+            "\n\nGrade it like a C1 examiner: grammar range, accuracy, vocabulary, and how ideas connect. Reply in exactly this shape:\n" +
+            "SCORE: X/10\n" +
+            "STRONG: one thing done well\n" +
+            "FIX: the biggest problem, in one sentence\n" +
+            "NEXT: one structure or habit to practise\n" +
+            "Keep every line under 15 words. Never rewrite the whole essay."
+        val ai = serviceAskBlocking(context, prompt)
+        if (!ai.isNullOrBlank()) return ai.trim()
+        if (isDisabled(context)) {
+            return "The AI judge is switched off after repeated timeouts, so nobody graded this. Delete and re-download the model from the Home screen to switch it back on."
+        }
+        val words = essayText.trim().split(Regex("\\s+")).count { it.isNotBlank() }
+        val connectors = listOf(
+            "however", "although", "which", "because", "despite",
+            "whereas", "therefore", "moreover", "even though"
+        ).count { essayText.lowercase().contains(it) }
+        return "No AI model installed, so nobody graded this. Download one from the AI judge card on the Home screen.\n" +
+            "Meanwhile, two honest numbers: $words words (a C1 essay usually needs 150+), and $connectors connecting words like however or although (strong essays use 3 or more)."
+    }
+
     fun levelReportBlocking(
         context: Context,
         level: Level,

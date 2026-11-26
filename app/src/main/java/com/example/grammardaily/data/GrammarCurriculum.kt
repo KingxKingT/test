@@ -327,6 +327,72 @@ object GrammarCurriculum {
                     explanation = "\u201CSo\u201D points forward to the RESULT. \u201CBecause\u201D looks backward to the CAUSE. However/Although build contrast, not cause-effect."
                 )
             )
+            Topic(
+                id = "B1:quantifiers",
+                title = "Much, many, a lot of",
+                explanation = "Words for amounts split in two: things you can count (friends, days) take many and few. Things you cannot count (water, time) take much and little. Not sure? A lot of works with both, mostly in positive sentences.",
+                examples = listOf(
+                    "I don\u2019t have **much** time. (time = no count)",
+                    "She has **many** friends here. (friends = count)",
+                    "We made **a lot of** mistakes. (both work)",
+                    "There is **little** milk left. (no count)"
+                ),
+                tip = "Not sure if it counts? Use \u201Ca lot of\u201D \u2014 it is almost always safe.",
+                discovery = Discovery(
+                    examples = listOf(
+                        "How much water do you drink?",
+                        "How many cups do you have?"
+                    ),
+                    question = "Complete: \u201CHow ___ money do you need?\u201D",
+                    options = listOf("much", "many", "few", "several"),
+                    correctIndex = 0,
+                    explanation = "Money is one mass, like water \u2014 no count \u2192 much. Many only joins things you can count: coins, bills."
+                )
+            ),
+            Topic(
+                id = "B1:prepositions",
+                title = "Dependent prepositions (good at, depend on)",
+                explanation = "Some words always pull the same small word after them: good AT maths, depend ON the weather, wait FOR the bus. The pair is fixed \u2014 learn it as one word, not as a rule.",
+                examples = listOf(
+                    "She is **good at** languages.",
+                    "It **depends on** the weather.",
+                    "I am **waiting for** my friend.",
+                    "He is **interested in** history."
+                ),
+                tip = "Hear the pair, say the pair \u2014 your ear remembers pairs better than lists.",
+                discovery = Discovery(
+                    examples = listOf(
+                        "It depends on you.",
+                        "She is good at chess."
+                    ),
+                    question = "Complete: \u201CI am waiting ___ the bus.\u201D",
+                    options = listOf("for", "at", "of", "on"),
+                    correctIndex = 0,
+                    explanation = "Wait always carries \u201Cfor\u201D before the thing you wait for. The pair is fixed."
+                )
+            ),
+            Topic(
+                id = "B1:articles-deep",
+                title = "A, the, or nothing?",
+                explanation = "First mention takes a/an. When we both know which one, take the. Talking about all of something \u2014 dogs, music, life \u2014 takes no word at all.",
+                examples = listOf(
+                    "I saw **a** dog. **The** dog was huge. (first, then known)",
+                    "**Dogs** are loyal. (all dogs, no word)",
+                    "She plays **the** piano. (instruments take \u201Cthe\u201D)",
+                    "**Life** here is quiet. (general, no word)"
+                ),
+                tip = "Can you point at it? Say \u201Cthe\u201D. Talking about everything of a kind? Say nothing.",
+                discovery = Discovery(
+                    examples = listOf(
+                        "Life in a village is quiet.",
+                        "The village has one shop."
+                    ),
+                    question = "Complete for ALL villages: \u201C___ villages are noisy.\u201D",
+                    options = listOf("(no word)", "The", "A", "One"),
+                    correctIndex = 0,
+                    explanation = "All villages in general \u2192 no word at all: \u201CVillages are noisy.\u201D The/A would point at special villages."
+                )
+            ),
         ))
 
         put(Level.B2, listOf(
@@ -562,6 +628,28 @@ object GrammarCurriculum {
                     explanation = "You pack the spare key now as insurance (in case). If you lose the first one, you take the spare only afterwards. in case = pre-empt, if = react."
                 )
             )
+            Topic(
+                id = "B2:phrasal-verbs",
+                title = "Phrasal verbs (give up, run out of)",
+                explanation = "A small word can change everything: give UP = stop, look AFTER = care for, run OUT OF = have none left. With it/them, the small word moves after: give it up, never give up it.",
+                examples = listOf(
+                    "Don\u2019t **give up** now. (= stop trying)",
+                    "She **looks after** her brother. (= cares for)",
+                    "We **ran out of** milk. (= none left)",
+                    "Turn **it** off \u2014 never \u201Cturn off it\u201D."
+                ),
+                tip = "Learn each phrasal verb as one new word with its own meaning \u2014 not as verb + grammar.",
+                discovery = Discovery(
+                    examples = listOf(
+                        "I gave up smoking last year.",
+                        "I gave it up last year."
+                    ),
+                    question = "Choose the correct order:",
+                    options = listOf("Don\u2019t give up it.", "Don\u2019t give it up.", "Don\u2019t it give up.", "Don\u2019t up give it."),
+                    correctIndex = 1,
+                    explanation = "With it/them, the small word jumps after the object: give it up. With full nouns it stays: give up smoking."
+                )
+            ),
         ))
         put(Level.C1, listOf(
             Topic(
