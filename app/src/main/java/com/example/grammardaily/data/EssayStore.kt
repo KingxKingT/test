@@ -23,6 +23,7 @@ object EssayStore {
     private const val PREFS = "grammar_daily"
     private const val KEY_TEXT = "essay_text"
     private const val KEY_FEEDBACK = "essay_feedback"
+    private const val KEY_HISTORY = "essay_history"
 
     fun load(context: Context): String =
         prefs(context).getString(KEY_TEXT, "").orEmpty()
@@ -31,11 +32,37 @@ object EssayStore {
         prefs(context).getString(KEY_FEEDBACK, null)
 
     fun save(context: Context, text: String, feedback: String?) {
-        prefs(context).edit()
+        val editor = prefs(context).edit()
             .putString(KEY_TEXT, text)
             .putString(KEY_FEEDBACK, feedback)
-            .apply()
+        if (feedback != null) {
+            val score = Regex("SCORE\\s*:?\\s*(\\d+)\\s*/\\s*10", RegexOption.IGNORE_CASE)
+                .find(feedback)?.groupValues?.get(1)?.toIntOrNull()
+            if (score != null) {
+                val week = weekNumber()
+                val entries = prefs(context).getStringSet(KEY_HISTORY, emptySet())
+                    .orEmpty().toMutableSet()
+                entries.removeAll { it.split("|").firstOrNull() == week.toString() }
+                entries.add(week.toString() + "|" + score)
+                editor.putStringSet(KEY_HISTORY, entries)
+            }
+        }
+        editor.apply()
     }
+
+    fun history(context: Context): List<Pair<Int, Int>> =
+        prefs(context).getStringSet(KEY_HISTORY, emptySet())
+            .orEmpty()
+            .mapNotNull { entry ->
+                val parts = entry.split("|")
+                val week = parts.getOrNull(0)?.toIntOrNull()
+                val score = parts.getOrNull(1)?.toIntOrNull()
+                if (week != null && score != null) week to score else null
+            }
+            .sortedByDescending { it.first }
+
+    private fun weekNumber(): Int =
+        (java.time.LocalDate.now().toEpochDay() / 7).toInt()
 
     private fun prefs(context: Context) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

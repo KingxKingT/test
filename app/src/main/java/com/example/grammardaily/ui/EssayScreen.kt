@@ -44,6 +44,7 @@ fun EssayScreen(onExit: () -> Unit) {
     var busy by remember { mutableStateOf(false) }
     val prompt = remember { EssayStore.thisWeekPrompt() }
     val words = text.split(Regex("\\s+")).count { it.isNotBlank() }
+    val history = remember(feedback) { EssayStore.history(context) }
 
     Column(
         modifier = Modifier
@@ -135,6 +136,36 @@ fun EssayScreen(onExit: () -> Unit) {
                         fontWeight = FontWeight.Bold
                     )
                     Text(text = f, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+        if (history.isNotEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "Your essay scores (newest first)",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = history.joinToString("  \u00b7  ") { "${it.second}/10" },
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = if (history.size >= 2 && history.first().second >= history.last().second)
+                            "Trending up \uD83D\uDCC8 \u2014 one essay a week is exactly how the score climbs."
+                        else
+                            "One essay a week \u2014 that is how the score climbs.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }

@@ -308,7 +308,7 @@ object AiJudge {
         val ai = serviceAskBlocking(context, prompt)
         if (!ai.isNullOrBlank()) return ai.trim()
         if (isDisabled(context)) {
-            return "The AI judge is switched off after repeated timeouts, so nobody graded this. Delete and re-download the model from the Home screen to switch it back on."
+            return "The AI judge is switched off after slow answers, so nobody graded this. Open the AI judge card on the Home screen and tap \u201cTurn the AI back on\u201d \u2014 no download needed."
         }
         val words = essayText.trim().split(Regex("\\s+")).count { it.isNotBlank() }
         val connectors = listOf(
@@ -377,7 +377,35 @@ object AiJudge {
 
         if (isDisabled(context) || !isModelReady(context)) {
             return if (exercise.kind == ExKind.WRITE) {
-                JudgeResult(true, "No AI model installed, so nobody checked it \u2014 compare yours with this:", false)
+                val typed = given.trim()
+                val starter = exercise.prompt.substringAfter("Start with: ", "").trim()
+                val typedTokens = ExerciseEngine.normalize(typed).split(" ").filter { it.isNotBlank() }
+                val starterTokens = ExerciseEngine.normalize(starter).split(" ").filter { it.isNotBlank() }
+                val wordCount = typedTokens.size
+                val copied = typedTokens == ExerciseEngine.normalize(exercise.answer).split(" ").filter { it.isNotBlank() }
+                when {
+                    copied -> JudgeResult(
+                        false,
+                        "That is the example, word for word. Write your own \u2014 even a small one.",
+                        false
+                    )
+                    starterTokens.isNotEmpty() && typedTokens.take(starterTokens.size) != starterTokens ->
+                        JudgeResult(
+                            false,
+                            "Follow the starter: \u201c" + starter.trim() + "\u201d",
+                            false
+                        )
+                    wordCount < 4 -> JudgeResult(
+                        false,
+                        "Too short \u2014 add a few more words and try again.",
+                        false
+                    )
+                    else -> JudgeResult(
+                        true,
+                        "No AI model installed, so nobody checked it \u2014 compare yours with this:",
+                        false
+                    )
+                }
             } else {
                 JudgeResult(false, fallbackNote, false)
             }

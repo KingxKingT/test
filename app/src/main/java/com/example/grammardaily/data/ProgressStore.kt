@@ -176,17 +176,35 @@ object ProgressStore {
         return when {
             !state.placementDone ->
                 "Find your English level" to "Take the 15-question mixed grammar test in Grammar Daily \u2014 it takes 5 minutes."
-            state.dueReviewTopics.isNotEmpty() -> {
-                val topic = state.dueReviewTopics.first()
-                "Review due: ${topic.title}" to topic.tip
-            }
+            state.dueReviewTopics.isNotEmpty() ->
+                pickMemoryLine(state.dueReviewTopics, "Review due: ")
             state.todayLessonDone && state.todayLessonTopicId == null ->
                 "Grammar Daily" to "Streak: ${state.streakDays} days. See you tomorrow for the next lesson!"
             else -> {
                 val topic = state.todayLessonTopicId?.let { findTopic(it) } ?: return null
-                "Today: ${topic.title}" to topic.tip
+                pickMemoryLine(listOf(topic), "Today: ")
             }
         }
+    }
+
+    private fun pickMemoryLine(topics: List<Topic>, titlePrefix: String): Pair<String, String> {
+        val topic = topics.first()
+        val lines = mutableListOf<Pair<String, String>>()
+        lines += titlePrefix + topic.title to topic.tip
+        Rules.forTopic(topic.id)?.let { rule ->
+            if (rule.wrong.isNotBlank() && rule.right.isNotBlank()) {
+                lines += "Don\u2019t say: ${rule.wrong}" to "Say: ${rule.right} \u2014 ${rule.why}"
+            }
+            if (rule.pattern.isNotBlank()) {
+                lines += "The pattern: ${topic.title}" to rule.pattern
+            }
+        }
+        ChunkBank.byTopic[topic.id].orEmpty().forEach { chunk ->
+            lines += "Say it as one block" to chunk
+        }
+        if (lines.size == 1) return lines[0]
+        val slot = (System.currentTimeMillis() / 7_200_000L) % lines.size
+        return lines[slot.toInt()]
     }
 
     private fun findTopic(id: String): Topic? =
