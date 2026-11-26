@@ -24,11 +24,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.example.grammardaily.data.Placement
 import com.example.grammardaily.data.ProgressStore
+import com.example.grammardaily.data.ExerciseEngine
 import com.example.grammardaily.data.QuestionBank
 import com.example.grammardaily.notify.ReminderWorker
 import com.example.grammardaily.ui.AppScreen
 import com.example.grammardaily.ui.HomeScreen
+import com.example.grammardaily.ui.ExerciseRunner
 import com.example.grammardaily.ui.LessonScreen
+import com.example.grammardaily.ui.PlacementScreen
 import com.example.grammardaily.ui.QuizScreen
 import com.example.grammardaily.ui.ReviewScreen
 
@@ -83,20 +86,15 @@ fun AppRoot() {
                         screen = AppScreen.TopicPractice(
                             topic = topic,
                             daily = false,
-                            questions = QuestionBank.byTopic(topic.id).shuffled()
+                            exercises = ExerciseEngine.practiceSet(topic.id).shuffled()
                         )
                     },
                     onStartReview = { topics -> screen = AppScreen.Review(topics) }
                 )
 
-                is AppScreen.Placement -> QuizScreen(
-                    title = "Full grammar test",
-                    questions = remember { Placement.testQuestions() },
-                    subtitle = "Trap answers included \u2014 answer honestly to land at the level where you will actually learn.",
-                    passFraction = 1.0,
-                    showHints = false,
-                    onDone = { _, _, answers ->
-                        ProgressStore.markPlacement(Placement.levelFromAnswers(answers), context)
+                is AppScreen.Placement -> PlacementScreen(
+                    onFinished = { res ->
+                        ProgressStore.markPlacement(res.level, context)
                         goHome()
                     },
                     onExit = { goHome() }
@@ -109,25 +107,27 @@ fun AppRoot() {
                         screen = AppScreen.TopicPractice(
                             topic = topic,
                             daily = true,
-                            questions = QuestionBank.byTopic(topic.id)
-                                .shuffled()
-                                .take(LESSON_QUESTIONS)
+                            exercises = ExerciseEngine.practiceSet(topic.id)
                         )
                     }
                 )
 
-                is AppScreen.TopicPractice -> QuizScreen(
+                is AppScreen.TopicPractice -> ExerciseRunner(
                     title = current.topic.title,
-                    questions = current.questions,
                     subtitle = if (current.daily)
                         "Pass 4 of 5 and the spaced reviews for this lesson begin."
                     else
                         "Extra practice \u2014 hints help you learn; nothing is at stake.",
+                    exercises = current.exercises,
                     passFraction = LESSON_PASS_FRACTION,
                     showHints = true,
-                    onDone = { _, total, answers ->
-                        if (current.daily && total > 0 &&
-                            answers.count { it }.toDouble() / total >= LESSON_PASS_FRACTION
+                    passMessage = "Passed \u2014 spaced reviews will keep this rule alive in your memory.",
+                    failMessage = "Not passed \u2014 no problem. The rule and the right answers were shown; try again tomorrow or from the weak-spots card.",
+                    onDone = { results, _, _ ->
+                        ProgressStore.recordAnswers(context, results)
+                        if (current.daily &&
+                            results.count { it.correct }.toDouble() /
+                            results.size.coerceAtLeast(1) >= LESSON_PASS_FRACTION
                         ) {
                             ProgressStore.recordLesson(context, current.topic.id)
                         } else {
@@ -162,7 +162,6 @@ fun AppRoot() {
     }
 }
 
-private const val LESSON_QUESTIONS = 5
-private const val LESSON_PASS_FRACTION = 4.0 / 5
+private const val private const val LESSON_PASS_FRACTION = 4.0 / 5
 private const val LEVEL_UP_MIN_CORRECT = 6
 private const val LEVEL_UP_PASS_FRACTION = 6.0 / 8

@@ -46,3 +46,21 @@ data class QuizQuestion(
     val explanation: String,
     val hint: String = ""
 )
+
+enum class ExKind { MCQ, TYPE, REORDER, FIX, LISTEN }
+
+data class Exercise(
+    val topicId: String,
+    val kind: ExKind,
+    val prompt: String,
+    val sentence: String = "",
+    val options: List<String> = emptyList(),
+    val correctIndex: Int = 0,
+    val accepted: List<String> = emptyList(),
+    val words: List<String> = emptyList(),
+    val answer: String = "",
+    val explanation: String = "",
+    val hint: String = ""
+)
+
+data class ExerciseResult(val topicId: String, val kind: ExKind, val correct: Boolean)

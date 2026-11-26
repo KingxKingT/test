@@ -13,7 +13,8 @@ data class ProgressState(
     val lessonDoneTopicId: String?,
     val dueReviewTopics: List<Topic>,
     val streakDays: Int,
-    val allMasteredFinished: Boolean
+    val allMasteredFinished: Boolean,
+    val weakTopicIds: List<String>
 )
 
 object ProgressStore {
@@ -28,6 +29,7 @@ object ProgressStore {
     private const val KEY_LESSON_TOPIC = "lesson_topic_id"
     private const val KEY_STREAK = "streak_days"
     private const val KEY_LAST_STUDY = "last_study_date"
+    private const val KEY_WRONG = "topic_wrong"
 
     private const val MASTERY_BOX = 4
     private val REVIEW_INTERVALS = mapOf(1 to 1L, 2 to 3L, 3 to 7L)
@@ -45,8 +47,12 @@ object ProgressStore {
         val todayDone = lessonDate == today.toString() && lessonTopic != null
         val dueTopicIds = due.filter { (id, date) ->
             date <= today && (boxes[id] ?: 0) < MASTERY_BOX
-        }.keys.sortedBy { id -> boxes[id] ?: 0 }
-        val dueTopics = dueTopicIds.mapNotNull { id -> findTopic(id) }
+        }.keys
+        val wrong = readWrong(prefs)
+        val orderedDueIds = dueTopicIds.sortedWith(
+            compareByDescending<String> { wrong[it] ?: 0 }.thenBy { boxes[it] ?: 0 }
+        )
+        val dueTopics = orderedDueIds.mapNotNull { id -> findTopic(id) }
         val pool = GrammarCurriculum.topicsByLevel[level].orEmpty()
         val lessonTopicNext = pool.firstOrNull {
             it.id !in mastered && (boxes[it.id] ?: 0) == 0
@@ -62,7 +68,9 @@ object ProgressStore {
             dueReviewTopics = dueTopics,
             streakDays = prefs.getInt(KEY_STREAK, 0),
             allMasteredFinished = level == Level.C1 &&
-                GrammarCurriculum.levelIsMastered(level, masteredList(prefs))
+                GrammarCurriculum.levelIsMastered(level, masteredList(prefs)),
+            weakTopicIds = wrong.filterValues { it > 0 }
+                .entries.sortedByDescending { it.value }.take(3).map { it.key }
         )
     }
 
@@ -167,7 +175,7 @@ object ProgressStore {
         val state = readState(context)
         return when {
             !state.placementDone ->
-                "Find your English level" to "Take the 25-question grammar test in Grammar Daily \u2014 it takes 5 minutes."
+                "Find your English level" to "Take the 15-question mixed grammar test in Grammar Daily \u2014 it takes 5 minutes."
             state.dueReviewTopics.isNotEmpty() -> {
                 val topic = state.dueReviewTopics.first()
                 "Review due: ${topic.title}" to topic.tip
@@ -186,6 +194,31 @@ object ProgressStore {
 
     private fun readBoxes(prefs: android.content.SharedPreferences): Map<String, Int> =
         decodeIntMap(prefs.getStringSet(KEY_BOXES, emptySet()))
+
+    private fun readWrong(prefs: android.content.SharedPreferences): Map<String, Int> =
+        decodeIntMap(prefs.getStringSet(KEY_WRONG, emptySet()))
+
+    fun readWrongCounts(context: Context): Map<String, Int> =
+        readWrong(prefs(context))
+
+    fun recordAnswers(context: Context, results: List<ExerciseResult>) {
+        if (results.isEmpty()) return
+        val wrong = readWrong(prefs(context)).toMutableMap()
+        results.forEach { r ->
+            if (r.correct) {
+                val c = wrong[r.topicId] ?: 0
+                if (c > 0) wrong[r.topicId] = c - 1 else wrong.remove(r.topicId)
+            } else {
+                wrong[r.topicId] = (wrong[r.topicId] ?: 0) + 1
+            }
+        }
+        prefs(context)
+            .edit()
+            .putStringSet(KEY_WRONG, wrong.filterValues { it > 0 }.map { "${it.key}:${it.value}" }.toSet())
+            .apply()
+    }
+
+    fun findTopicById(id: String): Topic? = findTopic(id)
 
     private fun readDue(prefs: android.content.SharedPreferences): Map<String, LocalDate> =
         decodeStringMap(prefs.getStringSet(KEY_DUE, emptySet()))

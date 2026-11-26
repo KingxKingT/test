@@ -35,6 +35,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.example.grammardaily.data.Exercise
+import com.example.grammardaily.data.ExerciseEngine
 import com.example.grammardaily.data.GrammarCurriculum
 import com.example.grammardaily.data.Level
 import com.example.grammardaily.data.Placement
@@ -49,7 +51,7 @@ sealed interface AppScreen {
     data object Home : AppScreen
     data object Placement : AppScreen
     data class Lesson(val topic: Topic) : AppScreen
-    data class TopicPractice(val topic: Topic, val daily: Boolean, val questions: List<QuizQuestion>) : AppScreen
+    data class TopicPractice(val topic: Topic, val daily: Boolean, val exercises: List<Exercise>) : AppScreen
     data class LevelUpTest(val questions: List<QuizQuestion>) : AppScreen
     data class Review(val topics: List<Topic>) : AppScreen
 }
@@ -94,7 +96,7 @@ fun HomeScreen(
 
         if (!current.placementDone) {
             Text(
-                text = "First, a full grammar test: ${Placement.BAND_SIZE * Level.entries.size} questions from easy to advanced, with trap answers that catch guessing. Your score per difficulty band decides where your lessons start.",
+                text = "First, a short full grammar test: 15 mixed questions \u2014 type the missing word, rebuild the sentence, fix the mistake and pick the right form. It shows your level and what to study next.",
                 style = MaterialTheme.typography.bodyLarge
             )
             Button(onClick = onStartPlacement, modifier = Modifier.fillMaxWidth()) {
@@ -156,6 +158,27 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Do the reviews")
+                    }
+                }
+            }
+        }
+
+        val weakTopics = current.weakTopicIds.mapNotNull { ProgressStore.findTopicById(it) }
+        if (weakTopics.isNotEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "\u26a0\ufe0f Weak spots \u2014 these rules hit back. Train one:",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    weakTopics.forEach { weak ->
+                        TextButton(onClick = { onExtraPractice(weak) }) {
+                            Text("\u2022 ${weak.title}")
+                        }
                     }
                 }
             }
@@ -430,14 +453,33 @@ fun LessonScreen(
             )
         }
 
-        Spacer(modifier = Modifier.weight(1f))
         if (ruleUnlocked) {
-            Text(
-                text = "Time needed: about 4 minutes. After today, a one-question review waits for you tomorrow, in 3 days and in 7 days \u2014 pass them all and the lesson is truly yours.",
-                style = MaterialTheme.typography.bodySmall
-            )
-            Button(onClick = { onStartPractice(topic) }, modifier = Modifier.fillMaxWidth()) {
-                Text("Practice this lesson (5 questions)")
+            val tryExercise = remember(topic.id) { ExerciseEngine.tryExercise(topic.id) }
+            var tryDone by remember(topic.id) { mutableStateOf(tryExercise == null) }
+            if (tryExercise != null && !tryDone) {
+                Text(
+                    text = "Try it — one easy question",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                ExerciseItem(
+                    exercise = tryExercise,
+                    showHint = true,
+                    onAnswered = { },
+                    onNext = { tryDone = true },
+                    nextLabel = "Next \u2192 practice"
+                )
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+            if (tryDone) {
+                Text(
+                    text = "Time needed: about 4 minutes. After today, a one-question review waits for you tomorrow, in 3 days and in 7 days \u2014 pass them all and the lesson is truly yours.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Button(onClick = { onStartPractice(topic) }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Practice this lesson (5 questions)")
+                }
             }
         }
     }
@@ -620,12 +662,9 @@ fun ReviewScreen(
 ) {
     val context = LocalContext.current
     var topicIndex by remember { mutableIntStateOf(0) }
-    var selected by remember { mutableStateOf<Int?>(null) }
-    var answeredWrong by remember { mutableStateOf(false) }
+    var attempt by remember { mutableIntStateOf(0) }
+    var reTeach by remember { mutableStateOf(false) }
     var done by remember { mutableStateOf(topics.isEmpty()) }
-    var question by remember {
-        mutableStateOf<QuizQuestion?>(topics.firstOrNull()?.let { QuestionBank.byTopic(it.id).randomOrNull() })
-    }
 
     if (done) {
         Column(
@@ -638,7 +677,7 @@ fun ReviewScreen(
             Spacer(modifier = Modifier.weight(0.3f))
             Text("\ud83c\udf89 Reviews finished", style = MaterialTheme.typography.headlineSmall)
             Text(
-                text = "Topics you missed were re-explained and will come back sooner. Passed topics move closer to mastery.",
+                text = "Topics you missed were re-taught and will come back sooner. Passed topics move closer to mastery.",
                 style = MaterialTheme.typography.bodyMedium
             )
             Button(onClick = onFinished, modifier = Modifier.fillMaxWidth()) { Text("Done") }
@@ -648,7 +687,19 @@ fun ReviewScreen(
     }
 
     val topic = topics[topicIndex]
-    val currentQuestion = question ?: return
+    val exercise = remember(topic.id, attempt) {
+        ExerciseEngine.reviewExercise(topic.id, attempt)
+    }
+
+    if (exercise == null) {
+        val next = topicIndex + 1
+        if (next >= topics.size) {
+            done = true
+        } else {
+            topicIndex = next
+        }
+        return
+    }
 
     Column(
         modifier = Modifier
@@ -669,116 +720,60 @@ fun ReviewScreen(
             TextButton(onClick = onFinished) { Text("Exit") }
         }
 
-        if (answeredWrong) {
+        if (reTeach) {
+            val rule = Rules.forTopic(topic.id)
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
             ) {
-                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        "Quick re-teach",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(text = topic.explanation, style = MaterialTheme.typography.bodyMedium)
-                    Text(text = topic.tip, style = MaterialTheme.typography.bodyMedium)
-                }
-            }
-        }
-
-        Text(text = currentQuestion.question, style = MaterialTheme.typography.titleLarge)
-
-        val options = shuffledOptions(currentQuestion)
-        options.forEach { option ->
-            val picked = selected != null &&
-                (selected == option.originalIndex || option.isCorrect)
-            val colors: CardColors = when {
-                selected == null -> CardDefaults.cardColors()
-                option.isCorrect -> CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
-                picked -> CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
-                else -> CardDefaults.cardColors()
-            }
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = colors,
-                onClick = {
-                    if (selected == null) selected = option.originalIndex
-                }
-            ) {
-                Text(
-                    text = option.text,
+                Column(
                     modifier = Modifier.padding(14.dp),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-        }
-
-        val correctChosen = selected?.let { index ->
-            options.firstOrNull { it.originalIndex == index }?.isCorrect
-        } == true
-        when {
-            selected == null -> {
-                var hintShown by remember(currentQuestion) { mutableStateOf(false) }
-                if (hintShown) {
-                    Text(
-                        text = "\ud83d\udca1 ${currentQuestion.hint}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.tertiary
-                    )
-                } else {
-                    TextButton(onClick = { hintShown = true }) { Text("\ud83d\udca1 Show hint") }
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text("Quick re-teach", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    if (rule != null) {
+                        Text(text = rule.pattern, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        Text(text = rule.right, color = Color(0xFF2E7D32), style = MaterialTheme.typography.bodyMedium)
+                        if (rule.why.isNotBlank()) Text(text = rule.why, style = MaterialTheme.typography.bodySmall)
+                    } else {
+                        Text(text = topic.explanation, style = MaterialTheme.typography.bodyMedium)
+                    }
+                    Text(text = topic.tip, style = MaterialTheme.typography.bodySmall)
                 }
             }
-
-            correctChosen -> {
-                Text(
-                    text = "Correct \u2014 one step closer to mastery.",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Button(
-                    onClick = {
+            Button(
+                onClick = {
+                    attempt = attempt + 1
+                    reTeach = false
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Got it \u2014 ask me a different one")
+            }
+        } else {
+            ExerciseItem(
+                exercise = exercise,
+                showHint = true,
+                onAnswered = { correct ->
+                    ProgressStore.recordAnswers(
+                        context,
+                        listOf(com.example.grammardaily.data.ExerciseResult(topic.id, exercise.kind, correct))
+                    )
+                    if (!correct) {
+                        reTeach = true
+                    } else {
                         ProgressStore.markReviewCorrect(context, topic.id)
-                        val nextTopicIndex = topicIndex + 1
-                        if (nextTopicIndex >= topics.size) {
+                        val next = topicIndex + 1
+                        if (next >= topics.size) {
                             done = true
                         } else {
-                            topicIndex = nextTopicIndex
-                            question = QuestionBank.byTopic(topics[nextTopicIndex].id).randomOrNull()
-                            selected = null
-                            answeredWrong = false
+                            topicIndex = next
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(if (topicIndex + 1 >= topics.size) "Finish reviews" else "Next")
-                }
-            }
-
-            else -> {
-                Text(
-                    text = currentQuestion.explanation,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Button(
-                    onClick = {
-                        selected = null
-                        answeredWrong = true
-                        question = QuestionBank.byTopic(topic.id)
-                            .filter { it != currentQuestion }
-                            .ifEmpty { QuestionBank.byTopic(topic.id) }
-                            .randomOrNull() ?: currentQuestion
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Got it \u2014 ask me a different one")
-                }
-            }
+                    }
+                },
+                onNext = null,
+                nextLabel = ""
+            )
         }
     }
 }

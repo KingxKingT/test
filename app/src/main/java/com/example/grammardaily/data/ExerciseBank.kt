@@ -1,0 +1,66 @@
+package com.example.grammardaily.data
+
+object ExerciseBank {
+
+    val reorder: Map<String, String> = mapOf(
+        "A1:be" to "They are at home now",
+        "A1:present-simple" to "He drinks coffee every morning",
+        "A1:articles" to "She is an engineer in a big company",
+        "A1:plurals-there" to "There are two children in the garden",
+        "A2:present-continuous" to "I am reading a great book at the moment",
+        "A2:past-simple" to "We watched a film yesterday evening",
+        "A2:comparatives" to "This car is faster than my old one",
+        "A2:going-to" to "They are going to move house next month",
+        "B1:present-perfect" to "I have lost my keys somewhere",
+        "B1:gerunds-infinitives" to "She decided to leave the party early",
+        "B1:conditionals-1-2" to "If it rains we will stay at home",
+        "B1:modals" to "You must stop when the light is red",
+        "B1:used-to" to "I used to play outside every day",
+        "B1:future-forms" to "We are meeting Anne at six tomorrow",
+        "B1:question-tags" to "You are tired aren\u2019t you",
+        "B1:connectors" to "Although it was cold we swam in the sea",
+        "B2:past-narrative" to "I was cooking when the phone rang",
+        "B2:reported-speech" to "He told me that he was tired",
+        "B2:passive" to "The cake was made by my sister",
+        "B2:relative-clauses" to "The man who called you is my boss",
+        "B2:future-perfect" to "By 2030 I will have finished the course",
+        "B2:modals-deduction" to "He must be tired after that run",
+        "B2:unreal-past" to "I wish I had studied harder last year",
+        "B2:conditionals-advanced" to "If I had left earlier I would have caught the train",
+        "C1:inversion" to "Never have I seen such a mess in here",
+        "C1:third-mixed" to "If she had taken the map she wouldn\u2019t have got lost",
+        "C1:cleft" to "It was Ana who solved the problem yesterday",
+        "C1:participle-clauses" to "Having finished the email she closed the laptop"
+    )
+
+    val fix: Map<String, Pair<String, String>> = mapOf(
+        "A1:be" to Pair("They is very happy today.", "They are very happy today."),
+        "A1:present-simple" to Pair("My brother work in a bank.", "My brother works in a bank."),
+        "A1:articles" to Pair("She is a engineer and he is a artist.", "She is an engineer and he is an artist."),
+        "A1:plurals-there" to Pair("There are a big park near my house.", "There is a big park near my house."),
+        "A2:present-continuous" to Pair("I am knowing the answer.", "I know the answer."),
+        "A2:past-simple" to Pair("Did you went to the party?", "Did you go to the party?"),
+        "A2:comparatives" to Pair("This bag is more heavy than that one.", "This bag is heavier than that one."),
+        "A2:going-to" to Pair("He going to buy a new phone.", "He is going to buy a new phone."),
+        "B1:present-perfect" to Pair("I have seen that film last week.", "I saw that film last week."),
+        "B1:gerunds-infinitives" to Pair("I want going home now.", "I want to go home now."),
+        "B1:conditionals-1-2" to Pair("If I will see him, I will tell him.", "If I see him, I will tell him."),
+        "B1:modals" to Pair("You should to visit your grandmother.", "You should visit your grandmother."),
+        "B1:used-to" to Pair("She use to dance every weekend.", "She used to dance every weekend."),
+        "B1:future-forms" to Pair("I will to help you tomorrow.", "I will help you tomorrow."),
+        "B1:question-tags" to Pair("You are tired, isn\u2019t it?", "You are tired, aren\u2019t you?"),
+        "B1:connectors" to Pair("Despite it was raining, we walked to school.", "Although it was raining, we walked to school."),
+        "B2:past-narrative" to Pair("I cooked dinner when the lights was going out.", "I was cooking dinner when the lights went out."),
+        "B2:reported-speech" to Pair("She said me that she would call.", "She told me that she would call."),
+        "B2:passive" to Pair("The window was broke by the boys.", "The window was broken by the boys."),
+        "B2:relative-clauses" to Pair("The book what you lent me was great.", "The book that you lent me was great."),
+        "B2:future-perfect" to Pair("By six o\u2019clock I will finished the report.", "By six o\u2019clock I will have finished the report."),
+        "B2:modals-deduction" to Pair("That mustn\u2019t be Sam \u2014 he is abroad.", "That can\u2019t be Sam \u2014 he is abroad."),
+        "B2:unreal-past" to Pair("I wish I have a bigger flat.", "I wish I had a bigger flat."),
+        "B2:conditionals-advanced" to Pair("If I would have known, I would come.", "If I had known, I would have come."),
+        "C1:inversion" to Pair("Never I have heard such a loud noise.", "Never have I heard such a loud noise."),
+        "C1:third-mixed" to Pair("If he had asked me, I would tell him the truth.", "If he had asked me, I would have told him the truth."),
+        "C1:cleft" to Pair("It was my brother save the old man.", "It was my brother who saved the old man."),
+        "C1:participle-clauses" to Pair("Having wrote the letter, he posted it.", "Having written the letter, he posted it.")
+    )
+}
