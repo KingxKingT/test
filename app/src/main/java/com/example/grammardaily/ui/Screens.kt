@@ -226,6 +226,11 @@ fun LessonScreen(
     onExit: () -> Unit,
     onStartPractice: (Topic) -> Unit
 ) {
+    val discovery = topic.discovery
+    var discoveryAnswered by remember(topic.id) { mutableStateOf(false) }
+    var discoveryCorrect by remember(topic.id) { mutableStateOf(false) }
+    var picked by remember(topic.id) { mutableStateOf(-1) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -238,46 +243,113 @@ fun LessonScreen(
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
-        Text(text = topic.explanation, style = MaterialTheme.typography.bodyLarge)
 
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+        if (discovery != null) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
             ) {
-                Text(
-                    "Examples",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                topic.examples.forEach { example ->
-                    Text(text = "\u2022 $example", style = MaterialTheme.typography.bodyMedium)
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        "Step 1 \u2014 Notice",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    discovery.examples.forEach { example ->
+                        Text(text = "\u2022 $example", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = discovery.question,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    discovery.options.forEachIndexed { index, option ->
+                        OutlinedButton(
+                            onClick = {
+                                picked = index
+                                discoveryAnswered = true
+                                discoveryCorrect = index == discovery.correctIndex
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(option)
+                        }
+                    }
+                    if (discoveryAnswered) {
+                        Text(
+                            text = if (discoveryCorrect) {
+                                "\u2705 Exactly! " + discovery.explanation
+                            } else {
+                                "\u274C Not quite. " + discovery.explanation + " Try again."
+                            },
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             }
         }
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-        ) {
-            Column(modifier = Modifier.padding(14.dp)) {
+        val ruleUnlocked = discovery == null || discoveryCorrect
+        if (ruleUnlocked) {
+            if (discovery != null) {
                 Text(
-                    "\ud83d\udca1 Remember",
-                    style = MaterialTheme.typography.titleSmall,
+                    text = "Now the rule",
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(text = topic.tip, style = MaterialTheme.typography.bodyMedium)
             }
+            Text(text = topic.explanation, style = MaterialTheme.typography.bodyLarge)
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        "Examples",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    topic.examples.forEach { example ->
+                        Text(text = "\u2022 $example", style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(
+                        "\ud83d\udca1 Remember",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = topic.tip, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        } else {
+            Text(
+                text = "Look at the sentences above and answer the noticing question \u2014 the rule unlocks once you spot the pattern yourself.",
+                style = MaterialTheme.typography.bodySmall
+            )
         }
 
         Spacer(modifier = Modifier.weight(1f))
-        Text(
-            text = "Time needed: about 4 minutes. After today, a one-question review waits for you tomorrow, in 3 days and in 7 days \u2014 pass them all and the lesson is truly yours.",
-            style = MaterialTheme.typography.bodySmall
-        )
-        Button(onClick = { onStartPractice(topic) }, modifier = Modifier.fillMaxWidth()) {
-            Text("Practice this lesson (5 questions)")
+        if (ruleUnlocked) {
+            Text(
+                text = "Time needed: about 4 minutes. After today, a one-question review waits for you tomorrow, in 3 days and in 7 days \u2014 pass them all and the lesson is truly yours.",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Button(onClick = { onStartPractice(topic) }, modifier = Modifier.fillMaxWidth()) {
+                Text("Practice this lesson (5 questions)")
+            }
         }
     }
 }

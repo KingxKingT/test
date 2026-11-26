@@ -21,12 +21,21 @@ enum class Level(val code: String, val title: String) {
     }
 }
 
+data class Discovery(
+    val examples: List<String>,
+    val question: String,
+    val options: List<String>,
+    val correctIndex: Int,
+    val explanation: String
+)
+
 data class Topic(
     val id: String,
     val title: String,
     val explanation: String,
     val examples: List<String>,
-    val tip: String
+    val tip: String,
+    val discovery: Discovery? = null
 )
 
 data class QuizQuestion(

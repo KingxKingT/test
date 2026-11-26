@@ -110,8 +110,8 @@ fun AppRoot() {
                             topic = topic,
                             daily = true,
                             questions = QuestionBank.byTopic(topic.id)
-                                .take(LESSON_QUESTIONS)
                                 .shuffled()
+                                .take(LESSON_QUESTIONS)
                         )
                     }
                 )
