@@ -54,6 +54,8 @@ sealed interface AppScreen {
     data class TopicPractice(val topic: Topic, val daily: Boolean, val exercises: List<Exercise>) : AppScreen
     data class LevelUpTest(val questions: List<QuizQuestion>) : AppScreen
     data class Review(val topics: List<Topic>) : AppScreen
+    data object VerbSettings : AppScreen
+    data object VerbExercise : AppScreen
 }
 
 private data class ShownOption(val originalIndex: Int, val text: String, val isCorrect: Boolean)
@@ -73,7 +75,8 @@ fun HomeScreen(
     onOpenLesson: (Topic) -> Unit,
     onStartLevelUp: (List<QuizQuestion>) -> Unit,
     onExtraPractice: (Topic) -> Unit,
-    onStartReview: (List<Topic>) -> Unit
+    onStartReview: (List<Topic>) -> Unit,
+    onOpenVerbSettings: () -> Unit
 ) {
     val context = LocalContext.current
     var state by remember { mutableStateOf<ProgressState?>(null) }
@@ -159,6 +162,29 @@ fun HomeScreen(
                     ) {
                         Text("Do the reviews")
                     }
+                }
+            }
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "\U0001F4D8 Daily verb widget",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Pick up to 3 verbs; the widget shows them in a new tense and form several times a day \u2014 tap for a mini exercise.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                OutlinedButton(onClick = onOpenVerbSettings, modifier = Modifier.fillMaxWidth()) {
+                    Text("Set up verbs & schedule")
                 }
             }
         }

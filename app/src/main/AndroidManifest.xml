@@ -12,7 +12,8 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -29,6 +30,18 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/grammar_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.VerbWidgetReceiver"
+            android:exported="false"
+            android:label="@string/verb_widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/verb_widget_info" />
         </receiver>
     </application>
 </manifest>

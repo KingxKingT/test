@@ -5,29 +5,40 @@ teaches you one grammar lesson every day until you have mastered the whole path.
 
 ## How it works
 
-1. **Full grammar test (harder)** — 25 questions in 5 difficulty bands (A1→C1),
-   4 options each, with trap distractors that catch guessing (e.g. "Did you went…?",
-   "Never I have…", dangling participles). Scoring is per band: a band only counts
-   if you get 3 of its 5 right, and a failed band caps your result.
-2. **One lesson per day, taught for slow learners** — every lesson follows the
-   *guided discovery* method used by the best ELT courses: you first see contrast
-   sentences (right vs. wrong wording) and answer a noticing question that makes you
-   spot the pattern yourself — only then does the rule unfold in plain language
-   (explanation, examples, one memory tip). Research on inductive learning + explicit
-   instruction shows this "notice before the rule" order sticks far better than
-   reading a rule first. Then a 5-question practice where a hint reveals a simplified
-   rule before you answer. Pass 4 of 5 to unlock the reviews. Different angles each
-   time: fill-in, find-the-mistake, trap forms.
-3. **Spaced repetition (mastery = proof over days, not one session)** — after the
-   lesson, a 1-question review waits for you tomorrow, then in 3 days, then in 7 days
-   (Leitner boxes). Fail a review and the app re-teaches the rule and asks a
-   *different* question until you get it right — repetition that teaches, not repeats.
-   A lesson is only "mastered" after all reviews pass.
-4. **Level-up test** — all topics of a level mastered → 8 hard questions, need 6
+1. **Full grammar test (15 questions, 4 exercise types)** — mixed type / reorder /
+   fix / multiple-choice questions across 5 difficulty bands (A1→C1). 2 of 3 right
+   passes a band; a failed band caps the result. At the end you see your **level,
+   score per grammar topic and a "study this next" list**.
+2. **One lesson per day — show, don't explain** — every rule fits on one screen:
+   a color-coded pattern ([She] + [goes], not "go"), 2-3 examples with the changing
+   word highlighted, one common mistake (✘ wrong vs ✔ right) and a monospace
+   timeline for tenses. Max 3 short sentences of explanation, in simple A2-level
+   words. B1/B2 lessons open with a guided-discovery "Notice" step. The lesson flow
+   is **See → Try (1 easy question, instant feedback) → Practice (5 mixed) →
+   Review (spaced repetition over days)**.
+3. **Real exercises, not just picking** — multiple choice is capped at ~20% of any
+   set. The rest: **type the missing word**, **rebuild the sentence** (tap the words
+   in order), **fix the mistake** and **listen & type** (offline text-to-speech).
+   Wrong answer → the right answer plus a one-line why.
+4. **Weak-spot tracking** — mistakes are counted per rule; weak rules come back more
+   often in reviews and extra practice, and the home screen shows a "Weak spots" card.
+5. **Spaced repetition (mastery = proof over days, not one session)** — after the
+   lesson, a review waits tomorrow, in 3 days and in 7 days (Leitner boxes), using a
+   different exercise type each time. Fail one and the rule is re-taught before a
+   fresh question. A lesson is only "mastered" after all reviews pass.
+6. **Daily Verb Widget** — pick up to 3 verbs (or use the level-based suggestions);
+   a second home-screen widget shows one verb at a time in a random tense
+   (present simple → conditional), random form (positive / negative / question),
+   with the sentence, the tense name, a "when to use it" line, one extra example and
+   the verb's forms (go / went / gone / going). Tapping opens a mini exercise on that
+   exact card. Mark cards "**I know this**" or "**Show again**" — show-again cards
+   return about twice as often. Rotation honors your chosen times-per-day (1/2/3/6)
+   and quiet hours. All sentences are generated offline — no AI calls.
+7. **Level-up test** — all topics of a level mastered → 8 hard questions, need 6
    right to move up (A1 → A2 → B1 → B2 → C1).
-5. **Reminders without opening the app** — a notification with a micro-review roughly
-   every 2 hours, plus a home-screen widget that always shows your level, streak,
-   what's due and your progress. Tapping it opens the app.
+8. **Reminders without opening the app** — a notification with a micro-review roughly
+   every 2 hours, plus a level/streak home-screen widget showing progress. Tapping
+   either widget opens the app.
 
 ## Curriculum (v1)
 

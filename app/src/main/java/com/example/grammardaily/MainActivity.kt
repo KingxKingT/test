@@ -2,6 +2,7 @@ package com.example.grammardaily
 
 import android.Manifest
 import android.os.Build
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -16,6 +17,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,6 +29,7 @@ import com.example.grammardaily.data.ProgressStore
 import com.example.grammardaily.data.ExerciseEngine
 import com.example.grammardaily.data.QuestionBank
 import com.example.grammardaily.notify.ReminderWorker
+import com.example.grammardaily.notify.VerbRotationWorker
 import com.example.grammardaily.ui.AppScreen
 import com.example.grammardaily.ui.HomeScreen
 import com.example.grammardaily.ui.ExerciseRunner
@@ -34,23 +37,33 @@ import com.example.grammardaily.ui.LessonScreen
 import com.example.grammardaily.ui.PlacementScreen
 import com.example.grammardaily.ui.QuizScreen
 import com.example.grammardaily.ui.ReviewScreen
+import com.example.grammardaily.ui.VerbExerciseScreen
+import com.example.grammardaily.ui.VerbSettingsScreen
 
 class MainActivity : ComponentActivity() {
 
+    private val verbCardRequest = mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        verbCardRequest.value = intent?.getBooleanExtra("verb_card", false) == true
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    AppRoot()
+                    AppRoot(verbCardRequest)
                 }
             }
         }
     }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        verbCardRequest.value = intent.getBooleanExtra("verb_card", false)
+    }
 }
 
 @Composable
-fun AppRoot() {
+fun AppRoot(verbCardRequest: MutableState<Boolean>) {
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -60,6 +73,7 @@ fun AppRoot() {
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
         ReminderWorker.schedule(context.applicationContext)
+        VerbRotationWorker.schedule(context.applicationContext)
     }
 
     var screen by remember { mutableStateOf<AppScreen>(AppScreen.Home) }
@@ -68,6 +82,13 @@ fun AppRoot() {
     fun goHome() {
         screen = AppScreen.Home
         homeRefresh++
+    }
+
+    LaunchedEffect(verbCardRequest.value) {
+        if (verbCardRequest.value) {
+            screen = AppScreen.VerbExercise
+            verbCardRequest.value = false
+        }
     }
 
     Scaffold { padding ->
@@ -89,7 +110,8 @@ fun AppRoot() {
                             exercises = ExerciseEngine.practiceSet(topic.id).shuffled()
                         )
                     },
-                    onStartReview = { topics -> screen = AppScreen.Review(topics) }
+                    onStartReview = { topics -> screen = AppScreen.Review(topics) },
+                    onOpenVerbSettings = { screen = AppScreen.VerbSettings }
                 )
 
                 is AppScreen.Placement -> PlacementScreen(
@@ -157,11 +179,20 @@ fun AppRoot() {
                     topics = current.topics,
                     onFinished = { goHome() }
                 )
+
+                AppScreen.VerbSettings -> VerbSettingsScreen(
+                    onExit = { goHome() }
+                )
+
+                AppScreen.VerbExercise -> VerbExerciseScreen(
+                    onDone = { goHome() },
+                    onExit = { goHome() }
+                )
             }
         }
     }
 }
 
-private const val private const val LESSON_PASS_FRACTION = 4.0 / 5
+private const val LESSON_PASS_FRACTION = 4.0 / 5
 private const val LEVEL_UP_MIN_CORRECT = 6
 private const val LEVEL_UP_PASS_FRACTION = 6.0 / 8
