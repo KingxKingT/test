@@ -98,7 +98,10 @@ object ExerciseEngine {
     }
 
     fun writeExercise(topicId: String): Exercise? {
-        val task = WriteBank.tasks[topicId] ?: return null
+        val variants = WriteBank.tasks[topicId].orEmpty()
+        if (variants.isEmpty()) return null
+        val day = java.time.LocalDate.now().toEpochDay().toInt()
+        val task = variants[Math.floorMod(day, variants.size)]
         return Exercise(
             topicId = topicId,
             kind = ExKind.WRITE,
