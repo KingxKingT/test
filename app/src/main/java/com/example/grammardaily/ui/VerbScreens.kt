@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.example.grammardaily.ui
 
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +36,7 @@ import com.example.grammardaily.data.ProgressStore
 import com.example.grammardaily.data.VerbBank
 import com.example.grammardaily.data.VerbStore
 import com.example.grammardaily.widget.VerbWidget
+import androidx.glance.appwidget.updateAll
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -314,7 +317,7 @@ fun VerbSettingsScreen(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
-                        "\U0001F3C5 Mastered verbs",
+                        "\uD83C\uDFC5 Mastered verbs",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -330,8 +333,8 @@ fun VerbSettingsScreen(
                                 context
                                     .getSharedPreferences("verb_widget", android.content.Context.MODE_PRIVATE)
                                     .edit()
-                                    .putStringSet("known_cards", known)
-                                    .putStringSet("mastered_verbs", mastered - verb)
+                                    .putStringSet("known_cards", known.toSet())
+                                    .putStringSet("mastered_verbs", (mastered - verb).toSet())
                                     .apply()
                                 refresh++
                             }) { Text("Reset") }

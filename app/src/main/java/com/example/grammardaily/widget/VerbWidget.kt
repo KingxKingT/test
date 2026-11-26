@@ -16,7 +16,7 @@ import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
-import androidx.glance.appwidget.update
+import androidx.glance.appwidget.updateAll
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
@@ -25,6 +25,7 @@ import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
+import androidx.glance.layout.padding
 import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
@@ -154,7 +155,7 @@ class KnownVerbAction : ActionCallback {
         val descriptor = VerbStore.currentCard(context) ?: return
         VerbStore.markKnown(context, descriptor)
         VerbStore.rotate(context)
-        VerbWidget().update(context, glanceId)
+        VerbWidget().updateAll(context)
         VerbRotationWorker.schedule(context)
     }
 }
@@ -164,7 +165,7 @@ class ShowAgainVerbAction : ActionCallback {
         val descriptor = VerbStore.currentCard(context) ?: return
         VerbStore.markShowAgain(context, descriptor)
         VerbStore.rotate(context)
-        VerbWidget().update(context, glanceId)
+        VerbWidget().updateAll(context)
         VerbRotationWorker.schedule(context)
     }
 }

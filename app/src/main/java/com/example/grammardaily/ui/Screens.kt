@@ -175,7 +175,7 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = "\U0001F4D8 Daily verb widget",
+                    text = "\uD83D\uDCD8 Daily verb widget",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )

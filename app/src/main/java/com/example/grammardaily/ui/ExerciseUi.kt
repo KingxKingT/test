@@ -132,7 +132,7 @@ fun ExerciseItem(
                 onClick = { Audio.speak(exercise.sentence) },
                 enabled = Audio.ready.value
             ) {
-                Text(if (Audio.ready.value) "\U0001F50A Play the sentence" else "\U0001F50A Audio loading\u2026")
+                Text(if (Audio.ready.value) "\uD83D\uDD0A Play the sentence" else "\uD83D\uDD0A Audio loading\u2026")
             }
             if (showAudioText) {
                 Text(
@@ -235,10 +235,10 @@ fun ExerciseItem(
 
         if (showHint && !checked && exercise.hint.isNotBlank()) {
             if (!hintOpen) {
-                TextButton(onClick = { hintOpen = true }) { Text("\U0001F4A1 Show hint") }
+                TextButton(onClick = { hintOpen = true }) { Text("\uD83D\uDCA1 Show hint") }
             } else {
                 Text(
-                    text = "\U0001F4A1 ${exercise.hint}",
+                    text = "\uD83D\uDCA1 ${exercise.hint}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.tertiary
                 )
@@ -311,7 +311,7 @@ fun ExerciseRunner(
         ) {
             Spacer(modifier = Modifier.weight(0.3f))
             Text(
-                text = if (correct == exercises.size) "\U0001F389" else "\u2705",
+                text = if (correct == exercises.size) "\uD83C\uDF89" else "\u2705",
                 style = MaterialTheme.typography.displaySmall
             )
             Text(text = "$correct / ${exercises.size}", style = MaterialTheme.typography.displaySmall)
