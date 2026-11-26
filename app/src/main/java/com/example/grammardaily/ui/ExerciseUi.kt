@@ -1,5 +1,6 @@
 @file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 
+package com.example.grammardaily.ui
 
 import android.content.Context
 import android.speech.tts.TextToSpeech
