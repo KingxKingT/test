@@ -30,7 +30,7 @@ object ExerciseBank {
         "C1:inversion" to "Never have I seen such a mess in here",
         "C1:third-mixed" to "If she had taken the map she wouldn\u2019t have got lost",
         "C1:cleft" to "It was Ana who solved the problem yesterday",
-        "C1:participle-clauses" to "Having finished the email she closed the laptop"
+        "C1:participle-clauses" to "Having finished the email she closed the laptop",
         "B1:quantifiers" to "We do not have much time today",
         "B1:prepositions" to "Our plans depend on the weather",
         "B1:articles-deep" to "The dog in the garden is huge",

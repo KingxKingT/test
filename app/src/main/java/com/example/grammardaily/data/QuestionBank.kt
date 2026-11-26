@@ -649,7 +649,7 @@ object QuestionBank {
         QuizQuestion("B2:conditionals-advanced", "We'll sign the contract tomorrow, ___ the lawyer approves the final draft.",
             listOf("as long as", "in case", "unless that", "even if"), 0,
             "Approval required for the result \u2192 as long as (= only if).",
-            "Only-if conditions \u2192 as long as / provided.")
+            "Only-if conditions \u2192 as long as / provided."),
         QuizQuestion("B1:quantifiers", "How ___ time do we have?",
             listOf("much", "many", "few", "several"), 0,
             "Time is one mass \u2014 no count \u2192 much.",

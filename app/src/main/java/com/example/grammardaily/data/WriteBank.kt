@@ -398,7 +398,7 @@ object WriteBank {
                 "A storm changes everything, past and present. Start with: if the storm had not come, ",
                 "If the storm had not come, the harvest would have been fine, and we would not be borrowing money now."
             )
-        )
+        ),
         "B1:quantifiers" to listOf(
             WriteTask(
                 "Write about your week with countable things. Start with: this week, I had many ",
@@ -570,8 +570,8 @@ object ChunkBank {
         "C1:participle-clauses" to listOf(
             "seeing the house, I stopped \u2014 two sentences become one.",
             "the -ing / -ed part keeps the same doer as the main sentence."
-        )
-"B1:quantifiers" to listOf(
+        ),
+        "B1:quantifiers" to listOf(
             "Count it \u2192 many, few. One mass \u2192 much, little.",
             "Not sure? \u201CA lot of\u201D is safe with both."
         ),

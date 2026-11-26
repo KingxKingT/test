@@ -326,7 +326,7 @@ object GrammarCurriculum {
                     correctIndex = 0,
                     explanation = "\u201CSo\u201D points forward to the RESULT. \u201CBecause\u201D looks backward to the CAUSE. However/Although build contrast, not cause-effect."
                 )
-            )
+            ),
             Topic(
                 id = "B1:quantifiers",
                 title = "Much, many, a lot of",
@@ -627,7 +627,7 @@ object GrammarCurriculum {
                     correctIndex = 0,
                     explanation = "You pack the spare key now as insurance (in case). If you lose the first one, you take the spare only afterwards. in case = pre-empt, if = react."
                 )
-            )
+            ),
             Topic(
                 id = "B2:phrasal-verbs",
                 title = "Phrasal verbs (give up, run out of)",
