@@ -55,7 +55,7 @@ object Rules {
             timeline = "PAST \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u25cf\u2500\u2192 NOW \u2500\u2500\u2500\u2500\u2500\u2192 FUTURE\n           (action is still going)"
         ),
         "A2:past-simple" to RuleSpec(
-            pattern = "[verb-ed]   or   [went / saw / did \u2026] and did + base form",
+            pattern = "[watched] or [went, saw] \u2014 used with finished times   questions: [Did you watch?]",
             examples = listOf("We **watched** a film yesterday.", "I **went** to London in 2020.", "Did you **call** her last night?"),
             short = "Finished time \u2192 verb-ed (or an irregular form like went).",
             wrong = "Did you went home?",
@@ -81,13 +81,13 @@ object Rules {
             timeline = "NOW \u2500\u2500plan\u2500\u2192 \u25cf\u2500\u2500\u2500\u2192 FUTURE\n  (decided before it happens)"
         ),
         "B1:present-perfect" to RuleSpec(
-            pattern = "[have/has] + [V3]  = no finished time, result NOW   |   [V2] + finished time",
+            pattern = "[have lost / has seen] = result now, no time   |   [lost / saw] + yesterday, in 2020",
             examples = listOf("I **have lost** my keys. (I don\u2019t have them now)", "I **lost** my keys yesterday. (finished time)", "She **has worked** here since 2020."),
-            short = "The result matters now \u2192 have/has + V3. A finished time (yesterday, in 2020) \u2192 past simple.",
+            short = "Result matters now \u2192 have lost, has seen. The sentence says when (yesterday, in 2020) \u2192 lost, saw.",
             wrong = "I have seen him yesterday.",
             right = "I saw him yesterday.",
             why = "\u201cYesterday\u201d is a finished time, so this is past simple.",
-            timeline = "PAST \u2500\u2500\u25cf\u2500\u2500\u2500?\u2500\u2500\u2500\u2192 NOW\n result matters now \u2192 have + V3\n pinned to a past time \u2192 V2"
+            timeline = "PAST \u2500\u2500\u25cf\u2500\u2500\u2500?\u2500\u2500\u2500\u2192 NOW\n have seen (no time said) \u2192 still matters now\n saw yesterday \u2192 over, done"
         ),
         "B1:gerunds-infinitives" to RuleSpec(
             pattern = "[enjoy / avoid / finish] + [verb-ing]   [want / decide / hope] + [to verb]",
@@ -108,7 +108,7 @@ object Rules {
         "B1:modals" to RuleSpec(
             pattern = "[can / must / should / might] + [verb]  (no \u201cto\u201d)",
             examples = listOf("I **can swim**.", "You **must stop** when it\u2019s red.", "You **should rest** today."),
-            short = "Modals are small helper words; the main verb follows with no \u201cto\u201d and no -s.",
+            short = "can, must, should are helper words; the main verb follows bare: can swim, must stop.",
             wrong = "You should to see a doctor.",
             right = "You should see a doctor.",
             why = "Modal + verb, never modal + to + verb."
@@ -148,13 +148,13 @@ object Rules {
             why = "\u201cDespite\u201d takes a noun; for a full clause use \u201calthough\u201d."
         ),
         "B2:past-narrative" to RuleSpec(
-            pattern = "[was/were + -ing] = the background   [V2] = the short event",
+            pattern = "[was cooking] = the long background   [rang, left] = the short event",
             examples = listOf("I **was cooking** when the phone **rang**.", "The sun **was shining** all morning.", "We **were talking**, then he suddenly **left**."),
             short = "Long action in the background \u2192 was/were + -ing. The short thing that happened \u2192 past simple.",
             wrong = "I cooked when the phone was ringing.",
             right = "I was cooking when the phone rang.",
             why = "Cooking is the long background, ring is the short event.",
-            timeline = "PAST \u2500\u25502550\u2192 \u2739event \u2500\u2500\u2500\u2192 NOW\n was cooking (long) \u2500\u2500\u2500\u2500\u2500\u2506\n              the phone rang \u2739"
+            timeline = "PAST \u2500\u2500\u2500\u2500\u2500\u2192 \u2739 \u2500\u2500\u2192 NOW\n was cooking (long) \u2500\u2500\u2500\u2500\u2500\u2506\n              the phone rang \u2739"
         ),
         "B2:reported-speech" to RuleSpec(
             pattern = "He said (that) \u2026 / He told + person \u2026  \u2014 tense moves one step back",
@@ -165,12 +165,12 @@ object Rules {
             why = "\u201cSay\u201d takes no person; use \u201ctell\u201d for that."
         ),
         "B2:passive" to RuleSpec(
-            pattern = "[be] + [V3]  (+ by \u2026)",
+            pattern = "[is / was / are] + [broken, made, spoken]  (+ by Ana\u2026)",
             examples = listOf("The cake **was made** by Ana.", "English **is spoken** here.", "The road **is being repaired**."),
-            short = "When the action matters more than the doer, flip it: be + V3.",
+            short = "The thing matters more than who did it: it goes first, then is/was + the after-have form.",
             wrong = "The window was broke.",
             right = "The window was broken.",
-            why = "Passive always needs the V3 form: broke \u2192 broken."
+            why = "After is/was say broken, not broke: He broke it \u2192 It was broken."
         ),
         "B2:relative-clauses" to RuleSpec(
             pattern = "[who] = people   [which] = things   [that] = both   [whose] = owner",
@@ -181,12 +181,12 @@ object Rules {
             why = "\u201cWhat\u201d cannot glue clauses; use \u201cthat\u201d."
         ),
         "B2:future-perfect" to RuleSpec(
-            pattern = "[will have] + [V3] + (by \u2026)",
+            pattern = "[will have finished] + (by 2030, by nine)",
             examples = listOf("By 2030 I **will have finished** the course.", "She **will have arrived** by nine.", "We **will have saved** enough by June."),
-            short = "\u201cDone before a future moment\u201d \u2192 will have + V3.",
+            short = "Picture the future moment (by nine). The action is finished before it: will have arrived.",
             wrong = "By nine I will finished it.",
             right = "By nine I will have finished it.",
-            why = "\u201cBy a future time\u201d needs \u201cwill have + V3\u201d.",
+            why = "\u201cBy a future time\u201d needs \u201cwill have finished\u201d \u2014 not \u201cwill finished\u201d.",
             timeline = "NOW \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2713\u2500\u2713\u2500\u2192 \u25cf by 2030\n (both ticks before \u25cf)"
         ),
         "B2:modals-deduction" to RuleSpec(
@@ -206,28 +206,28 @@ object Rules {
             why = "After \u201cwish\u201d, have steps back to had."
         ),
         "B2:conditionals-advanced" to RuleSpec(
-            pattern = "[If I had + V3], [I would have + V3]  \u2014 past that cannot change",
+            pattern = "[If I had left], [I would have caught] \u2014 both about the past",
             examples = listOf("If I **had left** earlier, I **would have caught** the train.", "If I **had studied** medicine, I **would be** a doctor now. (mixed)", "**Had I known**, I **would have said** something."),
-            short = "Pointing at the past: if + V3 pair, would have + V3. Fix the if-part; it never gets \u201cwould\u201d.",
+            short = "The truth: I didn\u2019t leave, so I missed the train. Speak that way: if + had left, would have caught.",
             wrong = "If I would have known, I would help.",
             right = "If I had known, I would have helped.",
-            why = "\u201cWould\u201d never sits in the if-part; use had + V3 there."
+            why = "Never \u201cIf I would have known\u201d \u2014 say \u201cIf I had known\u201d."
         ),
         "C1:inversion" to RuleSpec(
-            pattern = "[Never / Only then / Not only \u2026] + [auxiliary] + [subject]",
+            pattern = "[Never] + [have I seen]   [Only then] + [did I understand]",
             examples = listOf("**Never have I seen** such a mess.", "**Only then did** I understand.", "**Not only did he lie**, but he also ran."),
             short = "After a drama word like Never at the front, the verb jumps before the subject.",
             wrong = "Never I have seen such a mess.",
             right = "Never have I seen such a mess.",
-            why = "Negative opener \u2192 question word order, but no do/does/did unless there is no other auxiliary."
+            why = "It becomes question word order: Never have I seen. When the verb has no helper, use did: Only then did I understand."
         ),
         "C1:third-mixed" to RuleSpec(
-            pattern = "[If + past perfect], [would/could/might have + V3]   mixed: \u2026, [would + verb] now",
+            pattern = "[If she had taken], [she wouldn\u2019t have got]   mixed: [If they hadn\u2019t missed], [they would be here now]",
             examples = listOf("If she **had taken** the map, she **wouldn\u2019t have got** lost.", "If they **hadn\u2019t missed** the bus, they **would be** here now. (mixed)", "If I **hadn\u2019t met** you, we **wouldn\u2019t be** friends. (mixed)"),
-            short = "Third = all in the past. Mixed = past cause, present result: half V3, half base.",
+            short = "All past: had taken \u2192 would have got. Mixed: past cause (had missed), result now (would be).",
             wrong = "If you had asked me, I would tell you.",
             right = "If you had asked me, I would have told you.",
-            why = "A past condition needs \u201cwould have + V3\u201d in the result."
+            why = "The past result needs \u201cwould have told\u201d \u2014 would + have + the after-have form."
         ),
         "C1:cleft" to RuleSpec(
             pattern = "[It is/was X that/who \u2026]   [What I need is \u2026]",
@@ -238,12 +238,12 @@ object Rules {
             why = "\u201cWho/that\u201d connects the person to the rest of the sentence."
         ),
         "C1:participle-clauses" to RuleSpec(
-            pattern = "[Having + V3], [main clause]   [-ing clause], [main clause]",
+            pattern = "[Having finished], she closed\u2026   [Walking home], I saw\u2026",
             examples = listOf("**Having finished** the email, she closed the laptop.", "**Walking home**, I saw an accident.", "**Written** in 1920, the novel still feels modern."),
-            short = "Share the subject, shrink the first action into -ing or Having + V3.",
+            short = "Two actions, one person? Shrink the first action: Walking home\u2026 or Having finished\u2026",
             wrong = "Having wrote the email, she closed the laptop.",
             right = "Having written the email, she closed the laptop.",
-            why = "After \u201chaving\u201d use the V3 form: wrote \u2192 written."
+            why = "After \u201chaving\u201d say written, not wrote."
         )
     )
 

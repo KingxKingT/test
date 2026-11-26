@@ -275,14 +275,14 @@ object GrammarCurriculum {
             Topic(
                 id = "B1:question-tags",
                 title = "Question tags (\u2026, aren't you?)",
-                explanation = "A question tag turns a statement into a friendly question. Rules: opposite polarity (positive \u2192 negative tag), use the SAME auxiliary (are \u2192 aren't, can \u2192 can't) or do/does/did if there is none, and the pronoun replaces the subject. Falling tone = confirming; rising tone = real question.",
+                explanation = "A question tag turns a statement into a friendly question. Rules: the tag is the opposite of the sentence: positive \u2192 negative tag (are \u2192 aren't, can \u2192 can't); with no helper verb borrow do/does/did; the subject becomes a pronoun. Falling tone = confirming; rising tone = real question.",
                 examples = listOf(
                     "You're tired, aren't you?",
                     "She isn't coming, is she?",
                     "They left early, didn't they?",
                     "I'm late, aren't I? (special form!)"
                 ),
-                tip = "No auxiliary in the sentence? Borrow do/does/did. And \u201CI'm\u2026\u201D takes \u201Caren't I?\u201D \u2014 the one impossible-sounding exception.",
+                tip = "No helper verb in the sentence? Borrow do/does/did. And \u201CI'm\u2026\u201D takes \u201Caren't I?\u201D \u2014 the one impossible-sounding exception.",
                 discovery = Discovery(
                     examples = listOf(
                         "It's cold today, isn't it?",
@@ -295,7 +295,7 @@ object GrammarCurriculum {
                         "doesn't she", "does she", "isn't she", "won't she"
                     ),
                     correctIndex = 0,
-                    explanation = "Statement is positive \u2192 negative tag; no auxiliary \u2192 borrow does; subject \u201Cshe\u201D \u2192 she. Positive \u2192 she works, tag \u2192 doesn't she."
+                    explanation = "Statement is positive \u2192 negative tag; with no helper verb \u2192 borrow does; subject \u201Cshe\u201D \u2192 she. Positive \u2192 she works, tag \u2192 doesn't she."
                 )
             ),
             Topic(
@@ -356,7 +356,7 @@ object GrammarCurriculum {
                         "It must agree with \u201Chome\u201D"
                     ),
                     correctIndex = 0,
-                    explanation = "Two past moments: her eating, then my arrival. English marks the earlier one with had + V3 \u2014 that's the flashback tense."
+                    explanation = "Two past moments: her eating, then my arrival. English marks the earlier one with had + the after-have form (eaten, seen) \u2014 the earlier action, the flashback."
                 )
             ),
             Topic(
@@ -398,7 +398,7 @@ object GrammarCurriculum {
                     "My wallet was stolen on the bus.",
                     "I'm having the kitchen painted next week."
                 ),
-                tip = "Suspicious short passive? Check there's a be before the V3. And \u201CI repaired my car\u201D vs \u201CI had my car repaired\u201D \u2014 money changes hands only in the second one.",
+                tip = "Suspicious short passive? Check there's a be before the after-have form. And \u201CI repaired my car\u201D vs \u201CI had my car repaired\u201D \u2014 money changes hands only in the second one.",
                 discovery = Discovery(
                     examples = listOf(
                         "Somebody fixed my bike yesterday. \u2192 I had my bike fixed yesterday.",
@@ -414,7 +414,7 @@ object GrammarCurriculum {
                         "The action happens in the future"
                     ),
                     correctIndex = 0,
-                    explanation = "\u201Chave + object + V3\u201D means you arranged and (usually) paid for the service \u2014 perfect for mechanics, painters, hairdressers."
+                    explanation = "\u201Chave + object + the after-have form\u201D (have the kitchen painted) means you arranged and (usually) paid for the service \u2014 perfect for mechanics, painters, hairdressers."
                 )
             ),
             Topic(
@@ -449,14 +449,14 @@ object GrammarCurriculum {
             Topic(
                 id = "B2:future-perfect",
                 title = "Future perfect & future continuous",
-                explanation = "Future perfect \u2014 will have + V3 \u2014 looks back from a future point: done by then (\u201CBy 2030 I will have finished\u201D). Future continuous \u2014 will be + -ing \u2014 in progress at a future moment (\u201CAt 10 tonight I will be flying\u201D), also for polite current plans. Signal words: by / by the time / this time next week.",
+                explanation = "Future perfect \u2014 will have finished \u2014 looks back from a future point: done by then (\u201CBy 2030 I will have finished\u201D). Future continuous \u2014 will be + -ing \u2014 in progress at a future moment (\u201CAt 10 tonight I will be flying\u201D), also for polite current plans. Signal words: by / by the time / this time next week.",
                 examples = listOf(
                     "By June, she will have worked here for ten years.",
                     "Don't call at 8 \u2014 I'll be having dinner.",
                     "By the time you land, we will have finished the exam.",
                     "This time tomorrow, I'll be lying on a beach."
                 ),
-                tip = "\u201CBy + future date\u201D almost always asks for will have + V3. \u201CThis time + future\u201D asks for will be + -ing.",
+                tip = "\u201CBy + future date\u201D almost always asks for \u201cwill have finished\u201D. \u201CThis time + future\u201D asks for will be + -ing.",
                 discovery = Discovery(
                     examples = listOf(
                         "By 2030, doctors will have discovered new treatments.",
@@ -472,13 +472,13 @@ object GrammarCurriculum {
                         "Both sentences 2 and 3"
                     ),
                     correctIndex = 0,
-                    explanation = "\u201CBy 2030\u201D = deadline; finished from the future's point of view \u2192 will have + V3. Sentences 2-3 paint an action in mid-air \u2192 will be + -ing."
+                    explanation = "\u201CBy 2030\u201D = deadline; finished from the future's point of view \u2192 will have finished. Sentences 2-3 paint an action in mid-air \u2192 will be + -ing."
                 )
             ),
             Topic(
                 id = "B2:modals-deduction",
                 title = "Modals of deduction: must / can't / might have",
-                explanation = "Deductions from evidence: must = almost sure it's true; can't = almost sure it's false; might/could/may = possible. Past deductions take have + V3: \u201Cmust have missed\u201D, \u201Ccan't have seen\u201D, \u201Cmight have left\u201D. Note: \u201Cmustn't\u201D is NOT the deduction-opposite of must \u2014 \u201Ccan't\u201D is.",
+                explanation = "Deductions from evidence: must = almost sure it's true; can't = almost sure it's false; might/could/may = possible. About the past, say must/can't/might + have + the after-have form: \u201Cmust have missed\u201D, \u201Ccan't have seen\u201D, \u201Cmight have left\u201D. Note: \u201Cmustn't\u201D is NOT the deduction-opposite of must \u2014 \u201Ccan't\u201D is.",
                 examples = listOf(
                     "The ground is wet \u2014 it must have rained.",
                     "Emma can't be 40 \u2014 she's in our class!",
@@ -567,13 +567,13 @@ object GrammarCurriculum {
             Topic(
                 id = "C1:inversion",
                 title = "Inversion after negative adverbials",
-                explanation = "Start the sentence with a negative or limiting adverbial (Never, Rarely, Hardly, Not only, No sooner, Little) and the word order becomes question-like without a question mark: auxiliary + subject + verb.",
+                explanation = "Start the sentence with a negative or limiting adverbial (Never, Rarely, Hardly, Not only, No sooner, Little) and the word order becomes question-like without a question mark: helper verb first, then subject: Never have I seen.",
                 examples = listOf(
                     "Never have I seen such a beautiful city.",
                     "Hardly had I arrived home when it started to rain.",
                     "Not only was he late, he also forgot the tickets."
                 ),
-                tip = "The auxiliary moves in front of the subject: \u201CNever I have seen\u201D is wrong; \u201CNever have I seen\u201D is right."
+                tip = "The helper verb moves in front of the subject: \u201CNever I have seen\u201D is wrong; \u201CNever have I seen\u201D is right."
             ),
             Topic(
                 id = "C1:third-mixed",
