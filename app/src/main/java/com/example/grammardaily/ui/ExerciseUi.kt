@@ -338,8 +338,8 @@ fun ExerciseItem(
                                     checked = true
                                     wasCorrect = true
                                     judgedNote = "You chose to accept your own answer \u2014 compare it with the model answer."
-                                    onAppealed()
                                     onAnswered(true, typed)
+                                    onAppealed()
                                 }) { Text("\uD83D\uDE4F My answer makes sense too") }
                             }
                         }
@@ -379,12 +379,23 @@ fun ExerciseItem(
                 ) {
                     if (wasCorrect) {
                         Text(
-                            text = if (appealed) "\u2705 Accepted \u2014 your version also works" else "\u2705 Right! Laya checked it.",
+                            text = when {
+                                appealed -> "\u2705 Accepted \u2014 your version also works"
+                                judgedNote != null -> "\u2705 Right! Laya checked it."
+                                else -> "\u2705 Correct!"
+                            },
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
                         )
+                        if (judgedNote != null) {
+                            Text(
+                                text = judgedNote!!,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
                         if (appealed || exercise.kind == ExKind.WRITE || exercise.kind == ExKind.TRANSLATE) {
                             Text(
                                 text = "Model answer: $shownCorrect",
@@ -420,6 +431,13 @@ fun ExerciseItem(
                                 color = MaterialTheme.colorScheme.onErrorContainer
                             )
                         }
+                        if (judgedNote != null) {
+                            Text(
+                                text = judgedNote!!,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
                         if (!appealed &&
                             (exercise.kind == ExKind.TYPE || exercise.kind == ExKind.FIX ||
                                 exercise.kind == ExKind.LISTEN || exercise.kind == ExKind.WRITE ||
@@ -436,12 +454,6 @@ fun ExerciseItem(
                         }
                     }
                 }
-            }
-            if (judgedNote != null) {
-                Text(
-                    text = judgedNote!!, style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
             if (onNext != null) {
                 Button(onClick = onNext, modifier = Modifier.fillMaxWidth()) { Text(nextLabel) }
