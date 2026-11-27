@@ -53,6 +53,11 @@ teaches you one grammar lesson every day until you have mastered the whole path.
 10. **Reminders without opening the app** — a notification with a micro-review roughly
    every 2 hours, plus a level/streak home-screen widget showing progress. Tapping
    either widget opens the app.
+11. **Quick recall + streak freeze** — a 1-minute, 5-question recall of anything
+   already learned (weak topics first) keeps the streak alive on busy days; a
+   streak freeze (earned every 5 active days, max 1) saves the streak if a whole
+   day is missed. Mastered topics now come back every 14 days for long-term
+   retention, and reminders turn gentle when you have been away.
 
 ## Built on learning science (how people learn grammar fastest)
 

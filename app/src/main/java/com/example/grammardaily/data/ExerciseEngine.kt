@@ -191,6 +191,15 @@ object ExerciseEngine {
         ).filterNotNull().randomOrNull()
     }
 
+    fun quickRecallSet(learnedTopicIds: List<String>, weakTopicIds: List<String>): List<Exercise> {
+        if (learnedTopicIds.isEmpty()) return emptyList()
+        val weak = learnedTopicIds.filter { it in weakTopicIds }.shuffled()
+        val rest = learnedTopicIds.filter { it !in weakTopicIds }.shuffled()
+        return (weak + rest).take(5).mapIndexedNotNull { i, id ->
+            reviewExercise(id, i)
+        }
+    }
+
     fun placementTest(): List<Exercise> {
         val test = mutableListOf<Exercise>()
         val kindOrder = listOf(ExKind.TYPE, ExKind.REORDER, ExKind.FIX, ExKind.MCQ)

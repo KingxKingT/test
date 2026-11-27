@@ -66,6 +66,7 @@ sealed interface AppScreen {
     data object VerbSettings : AppScreen
     data object VerbExercise : AppScreen
     data object Essay : AppScreen
+    data class QuickRecall(val exercises: List<Exercise>) : AppScreen
 }
 
 private data class ShownOption(val originalIndex: Int, val text: String, val isCorrect: Boolean)
@@ -89,6 +90,7 @@ fun HomeScreen(
     onStartReview: (List<Topic>) -> Unit,
     onOpenVerbSettings: () -> Unit,
     onOpenEssay: () -> Unit,
+    onQuickRecall: () -> Unit,
     textScale: Float,
     onTextScale: (Float) -> Unit
 ) {
@@ -186,12 +188,24 @@ fun HomeScreen(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
-                    if (current.streakDays > 0) {
-                        Text(
-                            text = "\uD83D\uDD25 ${current.streakDays}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (current.streakDays > 0) {
+                            Text(
+                                text = "\uD83D\uDD25 ${current.streakDays}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                        if (current.streakFreezes > 0) {
+                            Text(
+                                text = "\uD83E\uDDCA",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
                     }
                 }
                 Text(
@@ -227,6 +241,21 @@ fun HomeScreen(
                             else -> "Practice something from your level"
                         }
                     )
+                }
+                val learnedIds = current.activeBoxTopicIds + current.masteredTopicIds
+                if (learnedIds.isNotEmpty()) {
+                    TextButton(
+                        onClick = onQuickRecall,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = if (current.quickRecallDone)
+                                "\u2713 Quick recall done \u2014 memory locked for today"
+                            else
+                                "\u26A1 Quick recall \u2014 1 minute, keeps the streak",
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
                 }
                 LinearProgressIndicator(
                     progress = {

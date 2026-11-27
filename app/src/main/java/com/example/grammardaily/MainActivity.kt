@@ -136,6 +136,15 @@ fun AppRoot(verbCardRequest: MutableState<Boolean>) {
                     onStartReview = { topics -> screen = AppScreen.Review(topics) },
                     onOpenVerbSettings = { screen = AppScreen.VerbSettings },
                     onOpenEssay = { screen = AppScreen.Essay },
+                    onQuickRecall = {
+                        val s = ProgressStore.readState(context)
+                        screen = AppScreen.QuickRecall(
+                            ExerciseEngine.quickRecallSet(
+                                (s.activeBoxTopicIds + s.masteredTopicIds).toList(),
+                                s.weakTopicIds
+                            )
+                        )
+                    },
                     textScale = textScale,
                     onTextScale = { v ->
                         textScale = v
@@ -204,6 +213,21 @@ fun AppRoot(verbCardRequest: MutableState<Boolean>) {
                 is AppScreen.Review -> ReviewScreen(
                     topics = current.topics,
                     onFinished = { goHome() }
+                )
+
+                is AppScreen.QuickRecall -> ExerciseRunner(
+                    title = "Quick recall",
+                    subtitle = "Five small questions from lessons you already learned \u2014 one minute is enough.",
+                    exercises = current.exercises,
+                    passFraction = 0.0,
+                    showHints = true,
+                    passMessage = "Memory locks in with little and often. Same time tomorrow?",
+                    failMessage = "Every miss is now scheduled to come back \u2014 misses are how memory grows.",
+                    onDone = { results, _, _ ->
+                        ProgressStore.recordQuickRecall(context, results)
+                        goHome()
+                    },
+                    onExit = { goHome() }
                 )
 
                 AppScreen.VerbSettings -> VerbSettingsScreen(

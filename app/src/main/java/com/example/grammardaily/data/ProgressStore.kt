@@ -14,7 +14,10 @@ data class ProgressState(
     val dueReviewTopics: List<Topic>,
     val streakDays: Int,
     val allMasteredFinished: Boolean,
-    val weakTopicIds: List<String>
+    val weakTopicIds: List<String>,
+    val streakFreezes: Int,
+    val quickRecallDone: Boolean,
+    val lastStudyDate: LocalDate?
 )
 
 object ProgressStore {
@@ -30,9 +33,12 @@ object ProgressStore {
     private const val KEY_STREAK = "streak_days"
     private const val KEY_LAST_STUDY = "last_study_date"
     private const val KEY_WRONG = "topic_wrong"
+    private const val KEY_QUICK_DATE = "quick_recall_date"
+    private const val KEY_FREEZE = "streak_freezes"
+    private const val KEY_FREEZE_EARN = "freeze_earned"
 
     private const val MASTERY_BOX = 4
-    private val REVIEW_INTERVALS = mapOf(1 to 1L, 2 to 3L, 3 to 7L)
+    private val REVIEW_INTERVALS = mapOf(1 to 1L, 2 to 3L, 3 to 7L, 4 to 14L)
 
     fun readState(context: Context): ProgressState {
         val prefs = prefs(context)
@@ -45,9 +51,7 @@ object ProgressStore {
         val lessonDate = prefs.getString(KEY_LESSON_DATE, null)
         val lessonTopic = prefs.getString(KEY_LESSON_TOPIC, null)
         val todayDone = lessonDate == today.toString() && lessonTopic != null
-        val dueTopicIds = due.filter { (id, date) ->
-            date <= today && (boxes[id] ?: 0) < MASTERY_BOX
-        }.keys
+        val dueTopicIds = due.filter { (_, date) -> date <= today }.keys
         val wrong = readWrong(prefs)
         val orderedDueIds = dueTopicIds.sortedWith(
             compareByDescending<String> { wrong[it] ?: 0 }.thenBy { boxes[it] ?: 0 }
@@ -70,7 +74,12 @@ object ProgressStore {
             allMasteredFinished = level == Level.C1 &&
                 GrammarCurriculum.levelIsMastered(level, masteredList(prefs)),
             weakTopicIds = wrong.filterValues { it > 0 }
-                .entries.sortedByDescending { it.value }.take(3).map { it.key }
+                .entries.sortedByDescending { it.value }.take(3).map { it.key },
+            streakFreezes = prefs.getInt(KEY_FREEZE, 0),
+            quickRecallDone = prefs.getString(KEY_QUICK_DATE, null) == today.toString(),
+            lastStudyDate = prefs.getString(KEY_LAST_STUDY, null)?.let {
+                runCatching { LocalDate.parse(it) }.getOrNull()
+            }
         )
     }
 
@@ -97,21 +106,12 @@ object ProgressStore {
         boxes[topicId] = 1
         val due = readDue(p).toMutableMap()
         due[topicId] = today.plusDays(1)
-        val last = p.getString(KEY_LAST_STUDY, null)?.let {
-            runCatching { LocalDate.parse(it) }.getOrNull()
-        }
-        val streak = when (last) {
-            today -> p.getInt(KEY_STREAK, 0)
-            today.minusDays(1) -> p.getInt(KEY_STREAK, 0) + 1
-            else -> 1
-        }
+        applyStreak(p, today)
         p.edit()
             .putStringSet(KEY_BOXES, boxes.map { "${it.key}:${it.value}" }.toSet())
             .putStringSet(KEY_DUE, due.map { "${it.key}:${it.value}" }.toSet())
             .putString(KEY_LESSON_DATE, today.toString())
             .putString(KEY_LESSON_TOPIC, topicId)
-            .putInt(KEY_STREAK, streak)
-            .putString(KEY_LAST_STUDY, today.toString())
             .apply()
     }
 
@@ -123,46 +123,68 @@ object ProgressStore {
         val due = readDue(p).toMutableMap()
         val mastered = p.getStringSet(KEY_MASTERED, emptySet())?.toSet() ?: emptySet()
         var becameMastered = false
-        if (newBox >= MASTERY_BOX) {
-            due.remove(topicId)
+        if (newBox == MASTERY_BOX) {
             p.edit().putStringSet(KEY_MASTERED, mastered + topicId).apply()
             becameMastered = true
-        } else {
-            due[topicId] = LocalDate.now().plusDays(REVIEW_INTERVALS[newBox] ?: 2L)
         }
-        val last = p.getString(KEY_LAST_STUDY, null)?.let {
-            runCatching { LocalDate.parse(it) }.getOrNull()
-        }
+        due[topicId] = LocalDate.now().plusDays(REVIEW_INTERVALS[newBox] ?: 14L)
         val today = LocalDate.now()
-        val streak = when (last) {
-            today -> p.getInt(KEY_STREAK, 0)
-            today.minusDays(1) -> p.getInt(KEY_STREAK, 0) + 1
-            else -> 1
-        }
+        applyStreak(p, today)
         p.edit()
             .putStringSet(KEY_BOXES, boxes.map { "${it.key}:${it.value}" }.toSet())
             .putStringSet(KEY_DUE, due.map { "${it.key}:${it.value}" }.toSet())
-            .putInt(KEY_STREAK, streak)
-            .putString(KEY_LAST_STUDY, today.toString())
             .apply()
         return becameMastered
     }
 
     fun recordStreakOnly(context: Context) {
-        val p = prefs(context)
-        val today = LocalDate.now()
+        applyStreak(prefs(context), LocalDate.now())
+    }
+
+    private fun applyStreak(p: android.content.SharedPreferences, today: LocalDate) {
         val last = p.getString(KEY_LAST_STUDY, null)?.let {
             runCatching { LocalDate.parse(it) }.getOrNull()
         }
-        val streak = when (last) {
-            today -> p.getInt(KEY_STREAK, 0)
-            today.minusDays(1) -> p.getInt(KEY_STREAK, 0) + 1
+        val streak = p.getInt(KEY_STREAK, 0)
+        var freezes = p.getInt(KEY_FREEZE, 0)
+        val newStreak = when {
+            last == today -> streak
+            last == today.minusDays(1) -> streak + 1
+            last != null && last < today.minusDays(1) && freezes > 0 -> {
+                freezes -= 1
+                streak + 1
+            }
             else -> 1
         }
+        var earned = p.getInt(KEY_FREEZE_EARN, 0)
+        if (last != today) {
+            earned += 1
+            if (earned >= 5 && freezes < 1) {
+                freezes += 1
+                earned = 0
+            }
+        }
         p.edit()
-            .putInt(KEY_STREAK, streak)
+            .putInt(KEY_STREAK, newStreak)
+            .putInt(KEY_FREEZE, freezes)
+            .putInt(KEY_FREEZE_EARN, earned)
             .putString(KEY_LAST_STUDY, today.toString())
             .apply()
+    }
+
+    fun recordQuickRecall(context: Context, results: List<ExerciseResult>) {
+        if (results.isEmpty()) return
+        recordAnswers(context, results)
+        val due = readDue(prefs(context))
+        val today = LocalDate.now()
+        results.filter { it.correct }.map { it.topicId }.distinct().forEach { id ->
+            if ((due[id] ?: LocalDate.MAX) <= today) {
+                markReviewCorrect(context, id)
+            }
+        }
+        val p = prefs(context)
+        p.edit().putString(KEY_QUICK_DATE, today.toString()).apply()
+        applyStreak(p, today)
     }
 
     fun levelUp(context: Context) {
@@ -173,9 +195,15 @@ object ProgressStore {
 
     fun reminderMessage(context: Context): Pair<String, String>? {
         val state = readState(context)
+        val longAgo = state.lastStudyDate != null &&
+            state.lastStudyDate < LocalDate.now().minusDays(1)
         return when {
             !state.placementDone ->
                 "Find your English level" to "Take the 15-question mixed grammar test in Grammar Daily \u2014 it takes 5 minutes."
+            longAgo && state.streakDays > 0 ->
+                "Your streak is waiting \uD83D\uDD25" to "${state.streakDays} days of English \u2014 one 1-minute quick recall in Grammar Daily keeps it alive."
+            longAgo ->
+                "One small step today" to "A 1-minute quick recall in Grammar Daily is enough \u2014 little and often wins."
             state.dueReviewTopics.isNotEmpty() ->
                 pickMemoryLine(state.dueReviewTopics, "Review due: ")
             state.todayLessonDone -> {
