@@ -110,6 +110,7 @@ fun ExerciseItem(
     var checked by remember(exercise) { mutableStateOf(false) }
     var wasCorrect by remember(exercise) { mutableStateOf(false) }
     var judgedNote by remember(exercise) { mutableStateOf<String?>(null) }
+    var retrying by remember(exercise) { mutableStateOf(false) }
     var judging by remember(exercise) { mutableStateOf(false) }
     var appealed by remember(exercise) { mutableStateOf(false) }
     var attempts by remember(exercise) { mutableIntStateOf(0) }
@@ -227,13 +228,41 @@ fun ExerciseItem(
                     Button(
                         onClick = {
                             val built = placedIdx.joinToString(" ") { exercise.words[it] }
-                            checked = true
-                            wasCorrect = ExerciseEngine.closeEnough(built, exercise.answer)
-                            onAnswered(wasCorrect, built)
+                            val ok = ExerciseEngine.closeEnough(built, exercise.answer)
+                            if (ok || attempts > 0) {
+                                checked = true
+                                wasCorrect = ok
+                                onAnswered(ok, built)
+                            } else {
+                                attempts = 1
+                            }
                         },
                         enabled = placedIdx.size == exercise.words.size,
                         modifier = Modifier.fillMaxWidth()
                     ) { Text("Check") }
+                    if (attempts > 0) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "\u274C Not right \u2014 try again.",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                TextButton(onClick = {
+                                    checked = true
+                                    wasCorrect = false
+                                    onAnswered(false, placedIdx.joinToString(" ") { exercise.words[it] })
+                                }) { Text("Show me the answer") }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -259,6 +288,7 @@ fun ExerciseItem(
                                     onAnswered(true, typed)
                                 } else if (attempts == 0) {
                                     attempts = 1
+                                    retrying = false
                                 } else {
                                     checked = true
                                     wasCorrect = false
@@ -278,26 +308,41 @@ fun ExerciseItem(
                             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
                         )
                     }
-                    if (attempts > 0 && !judging) {
-                        Text(
-                            text = "\u274C Not yet \u2014 one more try before the answer is shown.",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = Color(0xFFB3261E)
-                        )
-                        if (exercise.hint.isNotBlank()) {
-                            Text(
-                                text = "\uD83D\uDCA1 ${exercise.hint}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.tertiary
-                            )
+                    if (attempts > 0 && !judging && !retrying) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "\u274C Not right \u2014 try again.",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                if (exercise.hint.isNotBlank()) {
+                                    Text(
+                                        text = "\uD83D\uDCA1 ${exercise.hint}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                }
+                                Button(
+                                    onClick = { retrying = true },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) { Text("Try again") }
+                                TextButton(onClick = {
+                                    checked = true
+                                    wasCorrect = true
+                                    judgedNote = "You chose to accept your own answer \u2014 compare it with the model answer."
+                                    onAppealed()
+                                    onAnswered(true, typed)
+                                }) { Text("\uD83D\uDE4F My answer makes sense too") }
+                            }
                         }
-                        TextButton(onClick = {
-                            checked = true
-                            wasCorrect = true
-                            judgedNote = "You chose to accept your own answer \u2014 compare it with the model answer."
-                            onAppealed()
-                            onAnswered(true, typed)
-                        }) { Text("\uD83D\uDE4F My answer makes sense too") }
                     }
                 }
             }
@@ -321,44 +366,75 @@ fun ExerciseItem(
                 ExKind.REORDER -> exercise.answer
                 else -> target
             }
-            if (wasCorrect) {
-                Text(
-                    text = if (appealed) "\u2705 Accepted \u2014 your version also works" else "\u2705 Correct!",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color(0xFF2E7D32),
-                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (wasCorrect) MaterialTheme.colorScheme.secondaryContainer
+                    else MaterialTheme.colorScheme.errorContainer
                 )
-                if (appealed || exercise.kind == ExKind.WRITE || exercise.kind == ExKind.TRANSLATE) {
-                    Text(text = "Model answer: $shownCorrect", style = MaterialTheme.typography.bodyMedium)
-                }
-            } else {
-                Text(
-                    text = "\u274C Not right yet \u2014 the correct answer:",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Color(0xFFB3261E),
-                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
-                )
-                Text(text = shownCorrect, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-            }
-            if (exercise.explanation.isNotBlank()) {
-                Text(
-                    text = exercise.explanation,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            if (!wasCorrect && !appealed &&
-                (exercise.kind == ExKind.TYPE || exercise.kind == ExKind.FIX ||
-                    exercise.kind == ExKind.LISTEN || exercise.kind == ExKind.WRITE ||
-                    exercise.kind == ExKind.TRANSLATE)
             ) {
-                TextButton(onClick = {
-                    appealed = true
-                    wasCorrect = true
-                    judgedNote = "You chose to accept your own answer \u2014 compare it with the model answer to see the difference."
-                    onAppealed()
-                }) {
-                    Text("\uD83D\uDE4F My answer makes sense too")
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    if (wasCorrect) {
+                        Text(
+                            text = if (appealed) "\u2705 Accepted \u2014 your version also works" else "\u2705 Right! Laya checked it.",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                        )
+                        if (appealed || exercise.kind == ExKind.WRITE || exercise.kind == ExKind.TRANSLATE) {
+                            Text(
+                                text = "Model answer: $shownCorrect",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                        if (exercise.explanation.isNotBlank()) {
+                            Text(
+                                text = exercise.explanation,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = "\u274C Not right \u2014 the correct answer:",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                        )
+                        Text(
+                            text = shownCorrect,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        if (exercise.explanation.isNotBlank()) {
+                            Text(
+                                text = exercise.explanation,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                        if (!appealed &&
+                            (exercise.kind == ExKind.TYPE || exercise.kind == ExKind.FIX ||
+                                exercise.kind == ExKind.LISTEN || exercise.kind == ExKind.WRITE ||
+                                exercise.kind == ExKind.TRANSLATE || exercise.kind == ExKind.REORDER)
+                        ) {
+                            TextButton(onClick = {
+                                appealed = true
+                                wasCorrect = true
+                                judgedNote = "You chose to accept your own answer \u2014 compare it with the model answer to see the difference."
+                                onAppealed()
+                            }) {
+                                Text("\uD83D\uDE4F My answer makes sense too")
+                            }
+                        }
+                    }
                 }
             }
             if (judgedNote != null) {
