@@ -18,6 +18,12 @@ object CloudAi {
 
     val providers = listOf(
         Provider(
+            "Kilo",
+            "https://api.kilo.ai/api/gateway",
+            "nvidia/nemotron-3-ultra-550b-a55b:free",
+            "Free key: kilo.ai \u2014 sign up, get your API key (about 200 free requests an hour)"
+        ),
+        Provider(
             "Nvidia",
             "https://integrate.api.nvidia.com/v1",
             "meta/llama-3.1-8b-instruct",
