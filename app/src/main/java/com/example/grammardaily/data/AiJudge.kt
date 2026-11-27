@@ -441,6 +441,9 @@ object AiJudge {
                 append("Reply with exactly one word: YES or NO.")
             } else {
             append("The task: ").append(exercise.prompt).append("\n")
+            if (exercise.sentence.contains("___")) {
+                append("The student typed the missing word(s) for the blank in the sentence. ")
+            }
             }
             if (exercise.sentence.isNotBlank()) {
                 append("Sentence: ").append(exercise.sentence).append("\n")
@@ -452,17 +455,43 @@ object AiJudge {
             append("Reply with exactly one word: YES or NO.")
         }
         val raw = serviceAskBlocking(context, prompt)
-        return if (raw.isNullOrBlank()) {
+        if (raw.isNullOrBlank()) {
             markTimeout(context)
-            JudgeResult(false, fallbackNote, false)
-        } else {
-            markSuccess(context)
-            val verdict = raw.trim().uppercase()
-            if (verdict.contains("YES") && !verdict.contains("NO")) {
-                JudgeResult(true, "The AI judge accepted your answer.", true)
-            } else {
-                JudgeResult(false, fallbackNote, true)
+            return JudgeResult(false, fallbackNote, false)
+        }
+        markSuccess(context)
+        val verdict = raw.trim().uppercase()
+        val yesIdx = Regex("\\b(YES|YEP|YEAH|CORRECT|RIGHT|GOOD)\\b").find(verdict)?.range?.first
+        val noIdx = Regex("\\b(NO|NOPE|WRONG|INCORRECT)\\b").find(verdict)?.range?.first
+        val verdictWord = when {
+            yesIdx == null && noIdx == null -> null
+            noIdx == null -> "YES"
+            yesIdx == null -> "NO"
+            yesIdx < noIdx -> "YES"
+            else -> "NO"
+        }
+        val localMatch = exercise.kind != ExKind.WRITE &&
+            ExerciseEngine.closeEnough(given.trim(), target)
+        return when {
+            verdictWord == "YES" -> JudgeResult(true, "The AI judge accepted your answer.", true)
+            verdictWord == null && localMatch -> JudgeResult(
+                true,
+                "The judge replied unclearly, but your answer matches the correct one.",
+                true
+            )
+            localMatch -> JudgeResult(true, "Your answer matches the correct one.", true)
+            verdictWord == null -> {
+                if (exercise.kind == ExKind.WRITE || exercise.kind == ExKind.TRANSLATE) {
+                    JudgeResult(
+                        true,
+                        "The judge could not read its own reply, so nobody checked this one \u2014 compare yours with the model answer below.",
+                        false
+                    )
+                } else {
+                    JudgeResult(false, fallbackNote, false)
+                }
             }
+            else -> JudgeResult(false, fallbackNote, true)
         }
     }
 
