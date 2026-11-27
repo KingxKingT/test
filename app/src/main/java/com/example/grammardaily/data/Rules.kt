@@ -277,6 +277,84 @@ object Rules {
             right = "Don\u2019t give it up.",
             why = "With \u201Cit/them\u201D, the small word moves after the object."
         ),
+        "A2:past-continuous" to RuleSpec(
+            pattern = "[I/He/She] + [was + verb-ing]   [You/We/They] + [were + verb-ing]",
+            examples = listOf(
+                "I **was cooking** when the phone rang.",
+                "We **were walking** home when it started to rain.",
+                "She **was sleeping** at midnight."
+            ),
+            short = "An action already running at a past moment: was/were plus -ing.",
+            wrong = "I cooked dinner when the phone was ringing.",
+            right = "I was cooking dinner when the phone rang.",
+            why = "The cooking was long and running; the ring came and finished.",
+            timeline = "PAST \u2500\u2500\u2500\u2500\u25CF\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u25CF\u2500\u2500\u2500\u2192 NOW
+   (rang)   (was cooking)",
+        ),
+        "A2:will-future" to RuleSpec(
+            pattern = "[any person] + [will + plain verb]",
+            examples = listOf(
+                "I **will call** you tonight.",
+                "It **will be** cold tomorrow.",
+                "I think she **will love** the gift."
+            ),
+            short = "Will never changes. Every person gets will plus the plain verb.",
+            wrong = "I will to call you tomorrow.",
+            right = "I will call you tomorrow.",
+            why = "After will the verb comes plain \u2014 no to, no -s, no -ing.",
+            timeline = "NOW \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u25CF\u2500\u2500\u2500\u2192 FUTURE
+            (will call)",
+        ),
+        "B1:present-perfect-continuous" to RuleSpec(
+            pattern = "[I/You/We/They] + [have been + verb-ing]   [He/She/It] + [has been + verb-ing]",
+            examples = listOf(
+                "I **have been learning** English for two years.",
+                "He **has been working** here since May.",
+                "You look tired \u2014 have you **been running**?"
+            ),
+            short = "Started before, still running or just stopped: have/has been plus -ing.",
+            wrong = "I am learning English since 2022.",
+            right = "I have been learning English since 2022.",
+            why = "The action started in the past and still runs, so English uses have been + -ing.",
+            timeline = "PAST \u25CF\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u25CF NOW
+ since 2022   still running",
+        ),
+        "C1:verb-patterns" to RuleSpec(
+            pattern = "[verb] + [small word] + [verb-ing]   accuse of \u00B7 insist on \u00B7 prevent from \u00B7 succeed in",
+            examples = listOf(
+                "They **accused him of lying**.",
+                "She **insisted on paying**.",
+                "He **succeeded in opening** the jar."
+            ),
+            short = "After these verbs a small word comes first, and the next verb ends in -ing.",
+            wrong = "She insisted to pay for dinner.",
+            right = "She insisted on paying for dinner.",
+            why = "Insist needs on, and after a small word English uses -ing.",
+        ),
+        "C1:ellipsis" to RuleSpec(
+            pattern = "[So] + [helper + subject]   [Neither] + [helper + subject]   [hope] + [so / not]",
+            examples = listOf(
+                "\"I love coffee.\" \u2014 **So do I**.",
+                "\"I haven't finished.\" \u2014 **Neither have I**.",
+                "Will it rain? I **hope not**."
+            ),
+            short = "Say less: so/neither + helper + subject answers for you.",
+            wrong = "I love coffee. \u2014 I also love.",
+            right = "I love coffee. \u2014 So do I.",
+            why = "The helper (do) carries the tense, so the main verb can be dropped.",
+        ),
+        "C1:discourse-linkers" to RuleSpec(
+            pattern = "[furthermore] = and more   [nonetheless] = even so   [consequently] = as a result",
+            examples = listOf(
+                "The plan is cheap; **furthermore**, it is quick.",
+                "The odds were low; **nonetheless**, she tried.",
+                "Prices rose; **consequently**, sales fell."
+            ),
+            short = "These linkers glue whole sentences together in formal writing.",
+            wrong = "The plan is cheap; furthermore it is quick also.",
+            right = "The plan is cheap; furthermore, it is quick.",
+            why = "One linker does one job \u2014 adding also opens the door twice.",
+        ),
     )
 
     fun forTopic(id: String): RuleSpec? = map[id]

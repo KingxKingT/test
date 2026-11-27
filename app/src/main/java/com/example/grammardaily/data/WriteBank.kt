@@ -454,7 +454,91 @@ object WriteBank {
                 "Write who cares for whom in your family. Start with: in my family, ",
                 "In my family, my aunt looks after my grandmother, and nobody ever gives up on her."
             )
-        )
+        ),
+        "A2:past-continuous" to listOf(
+            WriteTask(
+                "Write what you were doing at eight this morning. Start with: at eight this morning, I was ",
+                "At eight this morning, I was making coffee and half listening to the news."
+            ),
+            WriteTask(
+                "Write a small scene with one interruption. Start with: while I was ",
+                "While I was watering the plants, a neighbor stopped by for a chat."
+            ),
+            WriteTask(
+                "Write what a family member was doing when you came home. Start with: when I came home, ",
+                "When I came home, my father was fixing the old radio in the kitchen."
+            )
+        ),
+        "A2:will-future" to listOf(
+            WriteTask(
+                "Make a promise for this week. Start with: this week I will ",
+                "This week I will call my grandmother every evening."
+            ),
+            WriteTask(
+                "Predict tomorrow's weather in your town. Start with: tomorrow it will ",
+                "Tomorrow it will be sunny, so I will walk to work."
+            ),
+            WriteTask(
+                "Offer to help someone. Start with: do not worry, ",
+                "Don't worry, I will carry the heavy box for you."
+            )
+        ),
+        "B1:present-perfect-continuous" to listOf(
+            WriteTask(
+                "Write how long you have done a hobby. Start with: I have been ",
+                "I have been playing chess since last winter, and I still lose a lot."
+            ),
+            WriteTask(
+                "Write why someone looks tired. Start with: he looks tired because ",
+                "He looks tired because he has been driving all night."
+            ),
+            WriteTask(
+                "Ask a friend about their new life. Start with: how long have you been ",
+                "How long have you been living in your new flat?"
+            )
+        ),
+        "C1:verb-patterns" to listOf(
+            WriteTask(
+                "Write about a time you insisted on something. Start with: I insisted on ",
+                "I insisted on paying for my own ticket, even though it was a gift."
+            ),
+            WriteTask(
+                "Write about something that stops you working. Start with: nothing prevents me from ",
+                "Nothing prevents me from working late when a deadline is close."
+            ),
+            WriteTask(
+                "Write about something you succeeded in doing. Start with: last year I succeeded in ",
+                "Last year I succeeded in running a full ten kilometers."
+            )
+        ),
+        "C1:ellipsis" to listOf(
+            WriteTask(
+                "Write a chat where you agree with a friend. Start with: A: I love weekends. B: ",
+                "A: I love weekends. B: So do I \u2014 two whole days of nothing planned."
+            ),
+            WriteTask(
+                "Write a reply agreeing with something negative. Start with: A: I can't cook. B: ",
+                "A: I can't cook. B: Neither can I, so we should order pizza."
+            ),
+            WriteTask(
+                "Write a short answer that replaces a whole sentence. Start with: will you join us? ",
+                "Will you join us? I think so, if the meeting ends early."
+            )
+        ),
+        "C1:discourse-linkers" to listOf(
+            WriteTask(
+                "Write one sentence linking two advantages. Start with: the course is online; furthermore, ",
+                "The course is online; furthermore, it costs less than half of a classroom."
+            ),
+            WriteTask(
+                "Write about the result of something. Start with: the app went free; consequently, ",
+                "The app went free; consequently, thousands of new learners joined."
+            ),
+            WriteTask(
+                "Write about something that happened against the odds. Start with: the odds were against us; nonetheless, ",
+                "The odds were against us; nonetheless, we finished the project on time."
+            )
+        ),
     )
 }
 object ChunkBank {
@@ -586,6 +670,30 @@ object ChunkBank {
         "B2:phrasal-verbs" to listOf(
             "give up = stop \u00b7 look after = care for \u00b7 run out of = none left",
             "With it/them, small word jumps: give it up"
-        )
+        ),
+        "A2:past-continuous" to listOf(
+            "was / were + -ing = the action was already running.",
+            "while + was/were-ing, then past simple: long action, short interrupt."
+        ),
+        "A2:will-future" to listOf(
+            "will + plain verb \u2014 no to, no -s, no -ing.",
+            "won't = will not \u2014 the promise word for no."
+        ),
+        "B1:present-perfect-continuous" to listOf(
+            "for + length (for an hour) \u00B7 since + start point (since May).",
+            "have been + -ing = started before, still going."
+        ),
+        "C1:verb-patterns" to listOf(
+            "accuse of \u00B7 insist on \u00B7 prevent from \u00B7 succeed in \u2014 next verb + ing.",
+            "after a small word (of/on/from), the verb wears -ing."
+        ),
+        "C1:ellipsis" to listOf(
+            "so + helper + subject = me too. neither + helper + subject = me neither.",
+            "hope so / hope not \u2014 tiny answers carry whole sentences."
+        ),
+        "C1:discourse-linkers" to listOf(
+            "furthermore = +1 reason \u00B7 consequently = result \u00B7 nonetheless = even so.",
+            "put a comma after the linker in writing."
+        ),
     )
 }

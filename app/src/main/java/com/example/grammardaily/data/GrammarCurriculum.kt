@@ -93,6 +93,28 @@ object GrammarCurriculum {
                     "We are going to paint the kitchen next week."
                 ),
                 tip = "Questions flip \u201Cbe\u201D: \u201CAre you going to come tonight?\u201D"
+            ),
+            Topic(
+                id = "A2:past-continuous",
+                title = "Past continuous (was / were + -ing)",
+                explanation = "Use was/were plus the verb with -ing for an action that was already running at a past moment. It paints the background, and a shorter finished action often interrupts it.",
+                examples = listOf(
+                    "I was cooking when the phone rang.",
+                    "They were playing football all afternoon.",
+                    "What were you doing at ten last night?"
+                ),
+                tip = "Long background action = was/were + -ing. The short action that interrupts it = past simple."
+            ),
+            Topic(
+                id = "A2:will-future",
+                title = "Future with will",
+                explanation = "Use will plus the plain verb for promises, offers and decisions made right now. It also predicts the future when there is no plan yet.",
+                examples = listOf(
+                    "I will call you tonight, I promise.",
+                    "It will be cold tomorrow.",
+                    "Don't worry, I will help you."
+                ),
+                tip = "Going to = plan already made. Will = decide now, or just predict."
             )
         ))
 
@@ -392,7 +414,18 @@ object GrammarCurriculum {
                     correctIndex = 0,
                     explanation = "All villages in general \u2192 no word at all: \u201CVillages are noisy.\u201D The/A would point at special villages."
                 )
-            ),
+            ),,
+            Topic(
+                id = "B1:present-perfect-continuous",
+                title = "Present perfect continuous (have been + -ing)",
+                explanation = "Use have/has been plus the verb with -ing for an action that started in the past and is still running or just stopped. It answers \"how long?\" or explains a result you can see now.",
+                examples = listOf(
+                    "I have been learning English for two years.",
+                    "She is tired because she has been working all day.",
+                    "How long have you been waiting?"
+                ),
+                tip = "for + a length of time (for an hour), since + a starting point (since Monday)."
+            )
         ))
 
         put(Level.B2, listOf(
@@ -695,6 +728,39 @@ object GrammarCurriculum {
                     "Built in 1990, the bridge is now under repair."
                 ),
                 tip = "The participle's subject must match the main clause subject \u2014 \u201CWalking down the street, the trees\u2026\u201D wrongly says the trees were walking."
+            ),
+            Topic(
+                id = "C1:verb-patterns",
+                title = "Verb + small word + -ing patterns",
+                explanation = "Some verbs need a small word before another verb, and that second verb takes -ing: accuse somebody of lying, insist on paying, prevent somebody from leaving.",
+                examples = listOf(
+                    "They accused him of lying.",
+                    "She insisted on paying for dinner.",
+                    "Nothing can prevent us from trying."
+                ),
+                tip = "Learn the whole chain as one block: accuse of, insist on, prevent from \u2014 the next verb always ends in -ing."
+            ),
+            Topic(
+                id = "C1:ellipsis",
+                title = "Short answers: so do I, neither have I",
+                explanation = "English drops repeated words or swaps them for tiny helpers: So do I, Neither have I, I hope not. The missing words are understood from the first sentence.",
+                examples = listOf(
+                    "\"I love coffee.\" \u2014 So do I.",
+                    "\"I haven't finished.\" \u2014 Neither have I.",
+                    "Will it rain? \u2014 I hope not."
+                ),
+                tip = "Agreeing with a positive: so + helper + subject. Agreeing with a negative: neither + helper + subject."
+            ),
+            Topic(
+                id = "C1:discourse-linkers",
+                title = "Grown-up linkers: furthermore, nonetheless, consequently",
+                explanation = "Formal writing uses stronger connectors: furthermore adds a reason, nonetheless pushes against it, consequently shows the result. They lift simple sentences into essays.",
+                examples = listOf(
+                    "The plan is cheap; furthermore, it is quick.",
+                    "The odds were low; nonetheless, she tried.",
+                    "Prices rose; consequently, sales fell."
+                ),
+                tip = "Swap them into a sentence you already know: but = nonetheless, so = consequently."
             )
         ))
     }

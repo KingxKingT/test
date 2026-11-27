@@ -34,7 +34,14 @@ object ExerciseBank {
         "B1:quantifiers" to "We do not have much time today",
         "B1:prepositions" to "Our plans depend on the weather",
         "B1:articles-deep" to "The dog in the garden is huge",
-        "B2:phrasal-verbs" to "We ran out of milk this morning",    )
+        "B2:phrasal-verbs" to "We ran out of milk this morning",
+        "A2:past-continuous" to "I was cooking dinner when you called",
+        "A2:will-future" to "I will call you after work today",
+        "B1:present-perfect-continuous" to "I have been waiting for the bus for ages",
+        "C1:verb-patterns" to "She insisted on paying for the whole meal",
+        "C1:ellipsis" to "I have never tried surfing and neither has my brother",
+        "C1:discourse-linkers" to "The results were poor consequently we changed the method",
+    )
 
     val fix: Map<String, Pair<String, String>> = mapOf(
         "A1:be" to Pair("They is very happy today.", "They are very happy today."),
@@ -68,6 +75,12 @@ object ExerciseBank {
 "B1:quantifiers" to Pair("I have much friends here.", "I have many friends here."),
         "B1:prepositions" to Pair("She is waiting the bus.", "She is waiting for the bus."),
         "B1:articles-deep" to Pair("The life in cities is fast.", "Life in cities is fast."),
-        "B2:phrasal-verbs" to Pair("Please turn off it.", "Please turn it off.")
+        "B2:phrasal-verbs" to Pair("Please turn off it.", "Please turn it off."),
+        "A2:past-continuous" to Pair("She was watch TV when I arrived.", "She was watching TV when I arrived."),
+        "A2:will-future" to Pair("We will to visit grandma on Sunday.", "We will visit grandma on Sunday."),
+        "B1:present-perfect-continuous" to Pair("I am learning English since two years.", "I have been learning English for two years."),
+        "C1:verb-patterns" to Pair("They accused him for stealing the money.", "They accused him of stealing the money."),
+        "C1:ellipsis" to Pair("I love jazz, and my wife loves too.", "I love jazz, and so does my wife."),
+        "C1:discourse-linkers" to Pair("The trial was small; therefore, the results were promising.", "The trial was small; nonetheless, the results were promising."),
     )
 }

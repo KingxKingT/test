@@ -81,16 +81,16 @@ What the app does because of it:
 | Level | Topics |
 |---|---|
 | A1 Beginner | verb to be · present simple · a/an/the · plurals + there is/are |
-| A2 Elementary | present continuous · past simple · comparatives/superlatives · going to |
-| B1 Intermediate | present perfect vs past simple · used to & would · future forms · question tags · gerunds & infinitives · 1st/2nd conditionals · modals · connectors (although/however/despite) |
+| A2 Elementary | present continuous · past simple · past continuous · comparatives/superlatives · going to · will |
+| B1 Intermediate | present perfect vs past simple · present perfect continuous · used to & would · future forms · question tags · gerunds & infinitives · 1st/2nd conditionals · modals · connectors (although/however/despite) |
 | B2 Upper-Intermediate | narrative tenses · reported speech · passive · relative clauses · future perfect & continuous · modals of deduction · unreal past (wish/if only) · advanced conditionals (inverted/mixed) |
-| C1 Advanced | inversion · third/mixed conditionals · cleft sentences · participle clauses |
+| C1 Advanced | inversion · third/mixed conditionals · cleft sentences · participle clauses · verb + preposition + -ing patterns · short answers (so do I / neither have I) · formal linkers (furthermore, nonetheless, consequently) |
 
 The main teaching path is **B1 → B2**: all 16 topics at those levels carry a guided
 -discovery "Notice" step and richer, harder question sets, aligned with the CEFR
 B1/B2 grammar syllabus (British Council / English Grammar Profile).
 
-148 practice questions + the 15-question optional placement test are bundled offline in
+38 lessons · 208 practice questions + the 15-question optional placement test are bundled offline in
 `app/src/main/java/com/example/grammardaily/data/GrammarCurriculum.kt` and
 `QuestionBank.kt`.
 
