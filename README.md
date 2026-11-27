@@ -163,7 +163,7 @@ to speed things up, both optional and additive:
    at the 529 MB 1B, which is the right fit for them. Both run fully
    offline after one download, and the download resumes where it stopped.
 2. **A free cloud AI key (the fast path).** In the Laya card you can paste
-   a free API key from Kilo (kilo.ai), cheapllm.shop, Nvidia (build.nvidia.com), Groq, or OpenRouter.
+   a free API key from Kilo (kilo.ai), cheapllm.shop, Nvidia (build.nvidia.com), Groq, or OpenRouter — or pick **Custom** and paste any OpenAI-compatible base URL, model name, and key.
    With a key on, every AI answer \u2014 judging, essays, level reports,
    \u201cWhy?\u201d explanations \u2014 comes from a fast hosted model (e.g. Llama
    3.1 8B) in about a second. No key, no internet, or a provider hiccup:

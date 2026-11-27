@@ -53,12 +53,14 @@ object CloudAi {
     private const val KEY_PROVIDER = "provider_index"
     private const val KEY_API = "api_key"
     private const val KEY_ENABLED = "enabled"
+    private const val KEY_CUSTOM_BASE = "custom_base"
+    private const val KEY_CUSTOM_MODEL = "custom_model"
 
     private fun prefs(context: Context) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     fun providerIndex(context: Context): Int =
-        prefs(context).getInt(KEY_PROVIDER, 0).coerceIn(0, providers.size - 1)
+        prefs(context).getInt(KEY_PROVIDER, 0).coerceIn(0, providers.size)
 
     fun apiKey(context: Context): String =
         prefs(context).getString(KEY_API, "").orEmpty().trim()
@@ -78,6 +80,27 @@ object CloudAi {
         prefs(context).edit().putBoolean(KEY_ENABLED, value).apply()
     }
 
+    fun customBaseUrl(context: Context): String =
+        prefs(context).getString(KEY_CUSTOM_BASE, "").orEmpty().trim()
+
+    fun customModelName(context: Context): String =
+        prefs(context).getString(KEY_CUSTOM_MODEL, "").orEmpty().trim()
+
+    fun setCustomBaseUrl(context: Context, url: String) {
+        prefs(context).edit().putString(KEY_CUSTOM_BASE, url.trim()).apply()
+    }
+
+    fun setCustomModelName(context: Context, model: String) {
+        prefs(context).edit().putString(KEY_CUSTOM_MODEL, model.trim()).apply()
+    }
+
+    fun customProvider(context: Context): Provider = Provider(
+        "Custom",
+        customBaseUrl(context),
+        customModelName(context),
+        "Your own OpenAI-compatible base URL and model name"
+    )
+
     fun configured(context: Context): Boolean =
         isEnabled(context) && apiKey(context).isNotBlank()
 
@@ -95,8 +118,10 @@ object CloudAi {
     /** Cloud is truly usable only with a saved key, the switch on, and internet up. */
     fun usableNow(context: Context): Boolean = configured(context) && isOnline(context)
 
-    fun currentProvider(context: Context): Provider =
-        providers.getOrNull(providerIndex(context)) ?: providers.first()
+    fun currentProvider(context: Context): Provider {
+        val i = providerIndex(context)
+        return if (i >= providers.size) customProvider(context) else providers[i]
+    }
 
     /**
      * One blocking chat call. Returns the reply text, or null on any failure
@@ -111,6 +136,7 @@ object CloudAi {
     ): String? {
         if (!configured(context)) return null
         val provider = currentProvider(context)
+        if (provider.baseUrl.isBlank() || provider.model.isBlank()) return null
         return try {
             val conn = URL(provider.baseUrl.trimEnd('/') + "/chat/completions")
                 .openConnection() as HttpURLConnection

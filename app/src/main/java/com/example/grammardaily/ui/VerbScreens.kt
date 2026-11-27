@@ -385,6 +385,9 @@ fun AiTeacherCard(refresh: Int) {
     var cloudEnabled by remember { mutableStateOf(CloudAi.isEnabled(context)) }
     var cloudStatus by remember { mutableStateOf("") }
     var cloudTesting by remember { mutableStateOf(false) }
+    var customBase by remember { mutableStateOf(CloudAi.customBaseUrl(context)) }
+    var customModel by remember { mutableStateOf(CloudAi.customModelName(context)) }
+    val customIdx = CloudAi.providers.size
     var expanded by remember(refresh) { mutableStateOf(false) }
     val dl by AiJudge.downloadState.collectAsState()
     val picker = rememberLauncherForActivityResult(
@@ -614,6 +617,30 @@ fun AiTeacherCard(refresh: Int) {
                             label = { Text(p.label, style = MaterialTheme.typography.bodySmall) }
                         )
                     }
+                    FilterChip(
+                        selected = cloudProviderIdx == customIdx,
+                        onClick = {
+                            CloudAi.setProvider(context, customIdx)
+                            cloudProviderIdx = customIdx
+                        },
+                        label = { Text("Custom", style = MaterialTheme.typography.bodySmall) }
+                    )
+                }
+                if (cloudProviderIdx == customIdx) {
+                    OutlinedTextField(
+                        value = customBase,
+                        onValueChange = { customBase = it },
+                        label = { Text("Base URL (e.g. https://cheapllm.shop/v1)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = customModel,
+                        onValueChange = { customModel = it },
+                        label = { Text("Model name (e.g. deepseek-v4.1-flash-1017)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
                 OutlinedTextField(
                     value = cloudKey,
@@ -625,12 +652,17 @@ fun AiTeacherCard(refresh: Int) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Button(
                         onClick = {
+                            if (cloudProviderIdx == customIdx) {
+                                CloudAi.setCustomBaseUrl(context, customBase)
+                                CloudAi.setCustomModelName(context, customModel)
+                            }
                             CloudAi.setApiKey(context, cloudKey)
                             CloudAi.setEnabled(context, true)
                             cloudEnabled = true
                             cloudStatus = "Saved \u2014 cloud AI is ON. Answers now come from the fast cloud AI whenever the internet is up; offline it falls back to the AI on the phone."
                         },
-                        enabled = cloudKey.isNotBlank()
+                        enabled = cloudKey.isNotBlank() &&
+                            (cloudProviderIdx != customIdx || (customBase.isNotBlank() && customModel.isNotBlank()))
                     ) { Text("Save and turn on") }
                     if (cloudEnabled) {
                         OutlinedButton(
@@ -642,6 +674,10 @@ fun AiTeacherCard(refresh: Int) {
                         ) { Text("Turn off") }
                         OutlinedButton(
                             onClick = {
+                                if (cloudProviderIdx == customIdx) {
+                                    CloudAi.setCustomBaseUrl(context, customBase)
+                                    CloudAi.setCustomModelName(context, customModel)
+                                }
                                 CloudAi.setApiKey(context, cloudKey)
                                 cloudTesting = true
                                 scope.launch(Dispatchers.IO) {
@@ -652,7 +688,8 @@ fun AiTeacherCard(refresh: Int) {
                                     }
                                 }
                             },
-                            enabled = cloudKey.isNotBlank() && !cloudTesting
+                            enabled = cloudKey.isNotBlank() && !cloudTesting &&
+                                (cloudProviderIdx != customIdx || (customBase.isNotBlank() && customModel.isNotBlank()))
                         ) { Text(if (cloudTesting) "Testing\u2026" else "Test") }
                     }
                 }
@@ -660,7 +697,7 @@ fun AiTeacherCard(refresh: Int) {
                     Text(text = cloudStatus, style = MaterialTheme.typography.bodySmall)
                 }
                 Text(
-                    text = "Build 19 \u2014 cloud AI options: Kilo \u00b7 cheapllm \u00b7 Nvidia \u00b7 Groq \u00b7 OpenRouter. If you cannot see this line, you are running an older app.",
+                    text = "Build 19 \u2014 cloud AI options: Kilo \u00b7 cheapllm \u00b7 Nvidia \u00b7 Groq \u00b7 OpenRouter \u00b7 Custom. If you cannot see this line, you are running an older app.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
