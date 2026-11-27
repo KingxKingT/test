@@ -265,29 +265,47 @@ fun HomeScreen(
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
-                levelTopics.forEachIndexed { i, t ->
-                    val mastered = t.id in current.masteredTopicIds
-                    val isToday = t.id == todayTopic?.id
+                val masteredCount = levelTopics.count { it.id in current.masteredTopicIds }
+                Text(
+                    text = "\u2705 $masteredCount of ${levelTopics.size} mastered",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                val upcoming = levelTopics.filter {
+                    it.id !in current.masteredTopicIds && it.id != todayTopic?.id
+                }
+                if (todayTopic != null) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
+                        Text(text = "\u2192", style = MaterialTheme.typography.bodyMedium)
                         Text(
-                            text = when {
-                                mastered -> "\u2705"
-                                isToday -> "\u2192"
-                                else -> "${i + 1}."
-                            },
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            text = t.title,
+                            text = todayTopic.title,
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-                            color = if (mastered) MaterialTheme.colorScheme.onSurfaceVariant
-                                    else MaterialTheme.colorScheme.onSurface
+                            fontWeight = FontWeight.Bold
                         )
                     }
+                }
+                upcoming.take(3).forEachIndexed { i, t ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(text = "${i + 1}.", style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            text = t.title,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+                val more = upcoming.size - 3
+                if (more > 0) {
+                    Text(
+                        text = "+ $more more lessons in your path",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
@@ -355,73 +373,94 @@ fun HomeScreen(
 
         AiTeacherCard(refresh = refresh)
 
-        var showLangPicker by remember { mutableStateOf(false) }
-        val translateLang = remember { mutableStateOf(ProgressStore.translateLang(context)) }
+        var settingsOpen by remember { mutableStateOf(false) }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Translate exercises",
+                text = "Settings",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            TextButton(onClick = { showLangPicker = true }) {
+            TextButton(onClick = { settingsOpen = !settingsOpen }) {
                 Text(
-                    text = translateLang.value?.let { TranslateBank.languageName(it) } ?: "Off",
+                    text = if (settingsOpen) "Hide" else "Show",
                     fontWeight = FontWeight.Bold
                 )
             }
         }
-        if (showLangPicker) {
-            AlertDialog(
-                onDismissRequest = { showLangPicker = false },
-                confirmButton = {},
-                title = { Text("Translate from your language") },
-                text = {
-                    Column {
-                        TextButton(onClick = {
-                            ProgressStore.setTranslateLang(context, null)
-                            translateLang.value = null
-                            showLangPicker = false
-                        }) { Text(if (translateLang.value == null) "Off \u2713" else "Off") }
-                        TranslateBank.languages.forEach { (code, name) ->
+        if (settingsOpen) {
+
+            var showLangPicker by remember { mutableStateOf(false) }
+            val translateLang = remember { mutableStateOf(ProgressStore.translateLang(context)) }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Translate exercises",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                TextButton(onClick = { showLangPicker = true }) {
+                    Text(
+                        text = translateLang.value?.let { TranslateBank.languageName(it) } ?: "Off",
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+            if (showLangPicker) {
+                AlertDialog(
+                    onDismissRequest = { showLangPicker = false },
+                    confirmButton = {},
+                    title = { Text("Translate from your language") },
+                    text = {
+                        Column {
                             TextButton(onClick = {
-                                ProgressStore.setTranslateLang(context, code)
-                                translateLang.value = code
+                                ProgressStore.setTranslateLang(context, null)
+                                translateLang.value = null
                                 showLangPicker = false
-                            }) {
-                                Text(if (translateLang.value == code) "$name \u2713" else name)
+                            }) { Text(if (translateLang.value == null) "Off \u2713" else "Off") }
+                            TranslateBank.languages.forEach { (code, name) ->
+                                TextButton(onClick = {
+                                    ProgressStore.setTranslateLang(context, code)
+                                    translateLang.value = code
+                                    showLangPicker = false
+                                }) {
+                                    Text(if (translateLang.value == code) "$name \u2713" else name)
+                                }
                             }
                         }
                     }
-                }
-            )
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Text size",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
-                listOf(1f to "A", 1.25f to "A+", 1.5f to "A++").forEach { (value, label) ->
-                    TextButton(onClick = { onTextScale(value) }) {
-                        Text(
-                            text = if (textScale == value) label + " \u2713" else label,
-                            fontWeight = FontWeight.Bold
-                        )
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Text size",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+                    listOf(1f to "A", 1.25f to "A+", 1.5f to "A++").forEach { (value, label) ->
+                        TextButton(onClick = { onTextScale(value) }) {
+                            Text(
+                                text = if (textScale == value) label + " \u2713" else label,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
-        }
-        TextButton(onClick = onStartPlacement, modifier = Modifier.fillMaxWidth()) {
-            Text("Retake the level test")
+            TextButton(onClick = onStartPlacement, modifier = Modifier.fillMaxWidth()) {
+                Text("Retake the level test")
+            }
         }
     }
 }

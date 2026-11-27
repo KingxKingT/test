@@ -427,6 +427,7 @@ object AiJudge {
                 append("Model answer: ").append(exercise.answer).append("\n")
                 append("Student translation: ").append(given.trim()).append("\n")
                 append("Is the student's translation correct English with the same meaning, even if worded differently? ")
+                append("Accept any wording that keeps the same meaning. Ignore small style or punctuation differences. ")
                 append("Reply with exactly one word: YES or NO.")
             } else if (exercise.kind == ExKind.WRITE) {
                 append("The student was asked to write their own sentence. ")
@@ -435,6 +436,8 @@ object AiJudge {
                 append("Student sentence: ").append(given.trim()).append("\n")
                 append("Is the student's sentence correct English and does it use the same pattern, ")
                 append("without copying the example word for word? ")
+                append("Accept natural phrasing and small spelling mistakes. ")
+                append("Reject only a wrong grammar pattern, broken English, or a copied example. ")
                 append("Reply with exactly one word: YES or NO.")
             } else {
             append("The task: ").append(exercise.prompt).append("\n")
