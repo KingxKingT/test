@@ -149,5 +149,27 @@ The app has two AI roles, and the names on screen mean different things:
   essay grades and feedback, level reports on your placement test. Same
   on-device model today, but used in its normal, talking mode.
 
-One download (~529 MB) powers both roles. Without it, a built-in checker
+One download powers both roles. Without it, a built-in checker
 does the judging and says so honestly.
+
+### Making it fast: two honest options
+
+The on-phone 1B model can be slow, especially on cheaper phones. Two ways
+to speed things up, both optional and additive:
+
+1. **A bigger model on strong phones.** The app checks how much RAM your
+   phone has. With ~6 GB or more it offers a smarter 4B model (2.4 GB,
+   Gemma 3 4B int4) as the recommended download; smaller phones are pointed
+   at the 529 MB 1B, which is the right fit for them. Both run fully
+   offline after one download, and the download resumes where it stopped.
+2. **A free cloud AI key (the fast path).** In the Laya card you can paste
+   a free API key from Nvidia (build.nvidia.com), Groq, or OpenRouter.
+   With a key on, every AI answer \u2014 judging, essays, level reports,
+   \u201cWhy?\u201d explanations \u2014 comes from a fast hosted model (e.g. Llama
+   3.1 8B) in about a second. No key, no internet, or a provider hiccup:
+   it silently falls back to the on-phone model, and without that to the
+   built-in checker.
+
+**Privacy, stated plainly:** while the cloud AI is on, your written answers
+and essays are sent to that provider's servers to be checked. Turn it off
+and nothing ever leaves the phone.

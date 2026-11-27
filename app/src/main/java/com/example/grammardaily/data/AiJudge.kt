@@ -2,6 +2,7 @@ package com.example.grammardaily.data
 
 import android.annotation.SuppressLint
 import com.example.grammardaily.ai.AiJudgeService
+import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -72,13 +73,14 @@ object AiJudge {
     val downloadState: StateFlow<DownloadState> = _downloadState.asStateFlow()
     private var downloadJob: Job? = null
 
-    fun startDownload(context: Context) {
+    fun startDownload(context: Context, only: DownloadableModel? = null) {
         if (_downloadState.value.running) return
         val appCtx = context.applicationContext
         _downloadState.value = DownloadState(running = true)
+        val models = only?.let { listOf(it) } ?: downloadableModels
         downloadJob = downloadScope.launch {
             var ok = false
-            for (model in downloadableModels) {
+            for (model in models) {
                 _downloadState.value = _downloadState.value.copy(name = model.name)
                 ok = downloadBlocking(appCtx, model.url) { d, t ->
                     _downloadState.value = _downloadState.value.copy(downloaded = d, total = t)
@@ -168,6 +170,10 @@ object AiJudge {
     }
 
     fun askAiBlocking(context: Context, prompt: String): String? {
+        if (CloudAi.usableNow(context)) {
+            val cloud = CloudAi.chatBlocking(context, prompt)
+            if (cloud != null) return cloud
+        }
         if (!isModelReady(context)) return null
         return serviceAskBlocking(context, prompt)
     }
@@ -210,7 +216,7 @@ object AiJudge {
 
     val downloadableModels = listOf(
         DownloadableModel(
-            "Gemma 3 1B (recommended, 529 MB)",
+            "Gemma 3 1B \u2014 small and fast (529 MB)",
             529,
             "https://huggingface.co/ekyra15/vaya-gemma3-1b-it-int4/resolve/main/gemma3-1b-it-int4.task"
         ),
@@ -218,8 +224,28 @@ object AiJudge {
             "Gemma 3 1B mirror (529 MB)",
             529,
             "https://huggingface.co/meldgaard/ilt-gemma3-1b-it-litert/resolve/main/gemma3-1b-it.task"
+        ),
+        DownloadableModel(
+            "Gemma 3 4B \u2014 bigger and smarter (2.4 GB)",
+            2440,
+            "https://huggingface.co/warped-community/Gemma3-4B-litert-lm/resolve/main/gemma3-4b-it-int4-web.task"
         )
     )
+
+    /** Total device RAM in GB (roughly as the phone reports it). */
+    fun totalRamGb(context: Context): Int {
+        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+            ?: return 0
+        val mi = ActivityManager.MemoryInfo()
+        am.getMemoryInfo(mi)
+        return (mi.totalMem / (1024L * 1024L * 1024L)).toInt()
+    }
+
+    /** A phone with 6 GB+ of RAM can hold the 4B model in memory. */
+    fun canRunBigModel(context: Context): Boolean = totalRamGb(context) >= 6
+
+    fun bestModelFor(context: Context): DownloadableModel =
+        if (canRunBigModel(context)) downloadableModels.last() else downloadableModels.first()
 
     fun downloadBlocking(context: Context, url: String, onProgress: (downloaded: Long, total: Long) -> Unit): Boolean {
         val target = modelFile(context)
@@ -362,7 +388,7 @@ object AiJudge {
             "FIX: the biggest problem, in one sentence\n" +
             "NEXT: one structure or habit to practise\n" +
             "Keep every line under 15 words. Never rewrite the whole essay."
-        val ai = serviceAskBlocking(context, prompt)
+        val ai = askAiBlocking(context, prompt)
         if (!ai.isNullOrBlank()) return ai.trim()
         if (isDisabled(context)) {
             return "The AI is switched off after slow answers, so nobody graded this. Open the Laya card on the Home screen and tap \u201cTurn the AI back on\u201d \u2014 no download needed."
@@ -382,7 +408,8 @@ object AiJudge {
         scores: List<Triple<Topic, Int, Int>>,
         results: List<ExerciseResult>
     ): String {
-        if (!isDisabled(context) && isModelReady(context)) {
+        val canDevice = !isDisabled(context) && isModelReady(context)
+        if (CloudAi.usableNow(context) || canDevice) {
             val scoreLines = scores.joinToString("\n") { (topic, c, t) ->
                 "${topic.id} ${topic.title}: $c of $t correct"
             }
@@ -396,7 +423,9 @@ object AiJudge {
                 append("LEVEL: <one letter-number code>\n")
                 append("- <one short line what to learn, max 5 lines, simple words>")
             }
-            val raw = serviceAskBlocking(context, prompt)
+            var raw: String? = null
+            if (CloudAi.usableNow(context)) raw = CloudAi.chatBlocking(context, prompt)
+            if (raw == null && canDevice) raw = serviceAskBlocking(context, prompt)
             if (!raw.isNullOrBlank()) {
                 markSuccess(context)
                 val lines = raw.trim().lines().filter { it.isNotBlank() }
@@ -410,7 +439,7 @@ object AiJudge {
                         bullets.forEach { append(it.trim()).append("\n") }
                     }.trim()
                 }
-            } else {
+            } else if (canDevice) {
                 markTimeout(context)
             }
         }
@@ -432,7 +461,8 @@ object AiJudge {
     fun judgeBlocking(context: Context, exercise: Exercise, given: String): JudgeResult {
         heuristic(context, exercise, given)?.let { return it }
 
-        if (isDisabled(context) || !isModelReady(context)) {
+        val canDevice = isModelReady(context) && !isDisabled(context)
+        if (!canDevice && !CloudAi.usableNow(context)) {
             return if (exercise.kind == ExKind.WRITE) {
                 val typed = given.trim()
                 val starter = exercise.prompt.substringAfter("Start with: ", "").trim()
@@ -511,12 +541,20 @@ object AiJudge {
             append("even if the wording is different? ")
             append("Reply with exactly one word: YES or NO.")
         }
-        val raw = serviceAskBlocking(context, prompt)
+        var raw: String? = null
+        var fromCloud = false
+        if (CloudAi.usableNow(context)) {
+            raw = CloudAi.chatBlocking(context, prompt)
+            fromCloud = raw != null
+        }
+        if (raw == null && canDevice) {
+            raw = serviceAskBlocking(context, prompt)
+        }
         if (raw.isNullOrBlank()) {
-            markTimeout(context)
+            if (!fromCloud && canDevice) markTimeout(context)
             return JudgeResult(false, fallbackNote, false)
         }
-        markSuccess(context)
+        if (canDevice) markSuccess(context)
         val verdict = raw.trim().uppercase()
         val yesIdx = Regex("\\b(YES|YEP|YEAH|CORRECT|RIGHT|GOOD)\\b").find(verdict)?.range?.first
         val noIdx = Regex("\\b(NO|NOPE|WRONG|INCORRECT)\\b").find(verdict)?.range?.first

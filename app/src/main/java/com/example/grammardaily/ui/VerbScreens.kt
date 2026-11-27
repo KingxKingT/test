@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.grammardaily.data.CloudAi
 import com.example.grammardaily.data.ExKind
 import com.example.grammardaily.data.Exercise
 import com.example.grammardaily.data.ExerciseResult
@@ -377,6 +380,11 @@ fun AiTeacherCard(refresh: Int) {
     var importing by remember { mutableStateOf(false) }
     var testLoading by remember { mutableStateOf(false) }
     var testResult by remember { mutableStateOf<String?>(null) }
+    var cloudProviderIdx by remember { mutableStateOf(CloudAi.providerIndex(context)) }
+    var cloudKey by remember { mutableStateOf(CloudAi.apiKey(context)) }
+    var cloudEnabled by remember { mutableStateOf(CloudAi.isEnabled(context)) }
+    var cloudStatus by remember { mutableStateOf("") }
+    var cloudTesting by remember { mutableStateOf(false) }
     var expanded by remember(refresh) { mutableStateOf(false) }
     val dl by AiJudge.downloadState.collectAsState()
     val picker = rememberLauncherForActivityResult(
@@ -434,7 +442,7 @@ fun AiTeacherCard(refresh: Int) {
                                 if (totalMb > 0) "Downloading \u2014 $mb of $totalMb MB (${mb * 100 / totalMb.coerceAtLeast(1)}%)"
                                 else "Downloading \u2014 $mb MB so far"
                             }
-                            ready && !disabled -> "Installed \u2014 Laya judges answers, the AI handles essays, offline."
+                            ready && !disabled -> "Installed \u2014 Laya judges answers, the AI handles essays, offline." + if (cloudEnabled) " Fast cloud AI: on." else ""
                             ready && disabled -> "Laya switched itself off after slow answers. Your model is still installed \u2014 no download needed."
                             else -> "One small download adds Laya (silent judge) and the AI (essays + level reports)."
                         },
@@ -487,21 +495,48 @@ fun AiTeacherCard(refresh: Int) {
                     }
 
                     !ready -> {
+                        val ramGb = remember { AiJudge.totalRamGb(context) }
+                        val canBig = ramGb >= 6
+                        val big = AiJudge.downloadableModels.last()
+                        val small = AiJudge.downloadableModels.first()
+                        Text(
+                            text = if (canBig)
+                                "Your phone has about $ramGb GB of memory \u2014 it can run the big, smart AI. Best for your phone: " + big.name + "."
+                            else
+                                "Your phone has about $ramGb GB of memory \u2014 the small, fast AI is the right fit. Best for your phone: " + small.name + ".",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         Button(
                             onClick = {
                                 status = ""
-                                AiJudge.startDownload(context)
+                                AiJudge.startDownload(context, if (canBig) big else small)
                             },
                             enabled = !importing,
                             modifier = Modifier.fillMaxWidth()
-                        ) { Text("\u2b07 Download the AI (529 MB)") }
+                        ) {
+                            Text(
+                                if (canBig) "\u2b07 Download the best for your phone (2.4 GB)"
+                                else "\u2b07 Download the AI (529 MB)"
+                            )
+                        }
+                        if (canBig) {
+                            OutlinedButton(
+                                onClick = {
+                                    status = ""
+                                    AiJudge.startDownload(context, small)
+                                },
+                                enabled = !importing,
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text("\u2b07 Or the small, fast AI (529 MB)") }
+                        }
                         Button(
                             onClick = { picker.launch("*/*") },
                             enabled = !importing,
                             modifier = Modifier.fillMaxWidth()
                         ) { Text("Or import a model file from your phone") }
                         Text(
-                            text = "The model is 529 MB and downloads once; afterwards everything runs offline. A stopped download continues from where it stopped \u2014 it never restarts from zero. You can delete it anytime to free space.",
+                            text = "The model downloads once; afterwards everything runs offline. A stopped download continues from where it stopped \u2014 it never restarts from zero. You can delete it anytime to free space.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -556,6 +591,73 @@ fun AiTeacherCard(refresh: Int) {
                             modifier = Modifier.fillMaxWidth()
                         ) { Text("Delete the model (free up space)") }
                     }
+                }
+                Text(
+                    text = "\u26A1 Fast cloud AI \u2014 makes everything much faster",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                val provider = CloudAi.providers[cloudProviderIdx]
+                Text(
+                    text = "The AI on this phone is small, so it can be slow. With a free API key, answers come from a fast cloud AI instead \u2014 about a second instead of half a minute. " + provider.note + ". Privacy: while this is on, your written answers and essays are sent to that company's servers to be checked. Turn it off and everything stays on your phone.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    CloudAi.providers.forEachIndexed { i, p ->
+                        FilterChip(
+                            selected = cloudProviderIdx == i,
+                            onClick = {
+                                CloudAi.setProvider(context, i)
+                                cloudProviderIdx = i
+                            },
+                            label = { Text(p.label, style = MaterialTheme.typography.bodySmall) }
+                        )
+                    }
+                }
+                OutlinedTextField(
+                    value = cloudKey,
+                    onValueChange = { cloudKey = it },
+                    label = { Text("Paste your free API key") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Button(
+                        onClick = {
+                            CloudAi.setApiKey(context, cloudKey)
+                            CloudAi.setEnabled(context, true)
+                            cloudEnabled = true
+                            cloudStatus = "Saved \u2014 cloud AI is ON. Answers now come from the fast cloud AI whenever the internet is up; offline it falls back to the AI on the phone."
+                        },
+                        enabled = cloudKey.isNotBlank()
+                    ) { Text("Save and turn on") }
+                    if (cloudEnabled) {
+                        OutlinedButton(
+                            onClick = {
+                                CloudAi.setEnabled(context, false)
+                                cloudEnabled = false
+                                cloudStatus = "Cloud AI is off \u2014 the AI on the phone handles everything again."
+                            }
+                        ) { Text("Turn off") }
+                        OutlinedButton(
+                            onClick = {
+                                CloudAi.setApiKey(context, cloudKey)
+                                cloudTesting = true
+                                scope.launch(Dispatchers.IO) {
+                                    val r = CloudAi.testBlocking(context)
+                                    kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                        cloudTesting = false
+                                        cloudStatus = r
+                                    }
+                                }
+                            },
+                            enabled = cloudKey.isNotBlank() && !cloudTesting
+                        ) { Text(if (cloudTesting) "Testing\u2026" else "Test") }
+                    }
+                }
+                if (cloudStatus.isNotBlank()) {
+                    Text(text = cloudStatus, style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
