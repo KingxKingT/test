@@ -659,6 +659,11 @@ fun AiTeacherCard(refresh: Int) {
                 if (cloudStatus.isNotBlank()) {
                     Text(text = cloudStatus, style = MaterialTheme.typography.bodySmall)
                 }
+                Text(
+                    text = "Build 19 \u2014 cloud AI options: Kilo \u00b7 cheapllm \u00b7 Nvidia \u00b7 Groq \u00b7 OpenRouter. If you cannot see this line, you are running an older app.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
