@@ -1,6 +1,8 @@
 package com.example.grammardaily.ui
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -145,14 +147,33 @@ fun HomeScreen(
         val todayTopic = current.todayLessonTopicId?.let { id ->
             levelTopics.firstOrNull { it.id == id }
         }
+        val doneTopic = current.lessonDoneTopicId?.let { ProgressStore.findTopicById(it) }
+        val weakTopics = current.weakTopicIds.mapNotNull { ProgressStore.findTopicById(it) }
+
+        val headline = when {
+            current.allMasteredFinished -> "You walked the whole path \uD83C\uDF89"
+            todayTopic != null && !current.todayLessonDone -> "Today's lesson"
+            levelMastered -> "Level ${current.level.code} is done!"
+            current.dueReviewTopics.isNotEmpty() -> "Reviews are due"
+            current.todayLessonDone -> "Today's lesson is done \u2705"
+            else -> "Keep the streak alive"
+        }
+        val subline = when {
+            current.allMasteredFinished -> "Every lesson is mastered. Keep reading real English every day."
+            todayTopic != null && !current.todayLessonDone -> todayTopic.title
+            levelMastered -> "All ${levelTopics.size} lessons mastered. Prove it and move up."
+            current.dueReviewTopics.isNotEmpty() -> "${current.dueReviewTopics.size} past lessons came back \u2014 pass them and they stay yours."
+            current.todayLessonDone -> "Same time tomorrow \u2014 the review is already scheduled."
+            else -> "One lesson today is enough. Little and often wins."
+        }
 
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -160,14 +181,51 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "${current.level.code} \u00b7 ${current.level.title}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        text = headline,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
+                    if (current.streakDays > 0) {
+                        Text(
+                            text = "\uD83D\uDD25 ${current.streakDays}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+                Text(
+                    text = subline,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Button(
+                    onClick = {
+                        when {
+                            current.allMasteredFinished ->
+                                GrammarCurriculum.topicsByLevel[Level.A1]?.firstOrNull()?.let(onExtraPractice)
+                            todayTopic != null && !current.todayLessonDone -> onOpenLesson(todayTopic)
+                            levelMastered -> current.level.next?.let {
+                                onStartLevelUp(QuestionBank.levelUpQuestions(it))
+                            }
+                            current.dueReviewTopics.isNotEmpty() -> onStartReview(current.dueReviewTopics)
+                            current.todayLessonDone -> (doneTopic ?: todayTopic)?.let(onExtraPractice)
+                            else -> levelTopics.firstOrNull {
+                                it.id !in current.masteredTopicIds
+                            }?.let(onExtraPractice)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text(
-                        text = if (current.streakDays > 0) "\uD83D\uDD25 ${current.streakDays} d"
-                        else "start your streak today",
-                        style = MaterialTheme.typography.bodyMedium
+                        when {
+                            current.allMasteredFinished -> "Keep practicing"
+                            todayTopic != null && !current.todayLessonDone -> "Start today's lesson"
+                            levelMastered -> "Take the level-up test"
+                            current.dueReviewTopics.isNotEmpty() -> "Do the reviews"
+                            current.todayLessonDone -> "Practice it once more"
+                            else -> "Practice something from your level"
+                        }
                     )
                 }
                 LinearProgressIndicator(
@@ -177,287 +235,218 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Text(
-                    text = "$masteredCount of ${levelTopics.size} lessons mastered",
+                    text = "$masteredCount of ${levelTopics.size} lessons mastered \u00b7 Level ${current.level.code}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-                when {
-                    current.allMasteredFinished -> {
+            }
+        }
+
+        var openSection by remember { mutableStateOf<String?>(null) }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (current.dueReviewTopics.isNotEmpty()) {
+                Pill(
+                    text = "\uD83D\uDD01 Reviews \u00b7 ${current.dueReviewTopics.size}",
+                    onClick = { onStartReview(current.dueReviewTopics) }
+                )
+            }
+            if (weakTopics.isNotEmpty()) {
+                Pill(
+                    text = "\u26A0\uFE0F Weak \u00b7 ${weakTopics.size}",
+                    active = openSection == "weak",
+                    onClick = { openSection = if (openSection == "weak") null else "weak" }
+                )
+            }
+            Pill(
+                text = "\uD83D\uDCD6 Path",
+                active = openSection == "path",
+                onClick = { openSection = if (openSection == "path") null else "path" }
+            )
+            Pill(text = "\uD83D\uDCDD Essay", onClick = { onOpenEssay() })
+            Pill(text = "\uD83D\uDCD8 Verbs", onClick = { onOpenVerbSettings() })
+            Pill(
+                text = "\uD83E\uDDE0 Laya",
+                active = openSection == "ai",
+                onClick = { openSection = if (openSection == "ai") null else "ai" }
+            )
+            Pill(
+                text = "\u2699\uFE0F Settings",
+                active = openSection == "settings",
+                onClick = { openSection = if (openSection == "settings") null else "settings" }
+            )
+        }
+
+        when (openSection) {
+            "path" -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         Text(
-                            text = "You walked the whole path \u2014 every lesson is mastered. \uD83C\uDF89",
-                            style = MaterialTheme.typography.bodyMedium
+                            text = "Your path in ${current.level.code}",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
                         )
-                        OutlinedButton(
-                            onClick = {
-                                GrammarCurriculum.topicsByLevel[Level.A1]?.firstOrNull()?.let(onExtraPractice)
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) { Text("Keep practicing") }
-                    }
-
-                    levelMastered -> {
-                        Button(
-                            onClick = {
-                                current.level.next?.let { next ->
-                                    onStartLevelUp(QuestionBank.levelUpQuestions(next))
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) { Text("Level ${current.level.code} done \u2192 take the level-up test") }
-                    }
-
-                    todayTopic != null -> {
-                        Button(onClick = { onOpenLesson(todayTopic) }, modifier = Modifier.fillMaxWidth()) {
+                        val upcoming = levelTopics.filter {
+                            it.id !in current.masteredTopicIds && it.id != todayTopic?.id
+                        }
+                        if (todayTopic != null) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(text = "\u2192", style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    text = todayTopic.title,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        upcoming.take(3).forEachIndexed { i, t ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(text = "${i + 1}.", style = MaterialTheme.typography.bodyMedium)
+                                Text(text = t.title, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                        val more = upcoming.size - 3
+                        if (more > 0) {
                             Text(
-                                if (current.todayLessonDone) "Today's lesson is done \u2014 open it again"
-                                else "Today's lesson: ${todayTopic.title}"
+                                text = "+ $more more lessons in your path",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        if (current.todayLessonDone) {
-                            OutlinedButton(
-                                onClick = { onExtraPractice(todayTopic) },
-                                modifier = Modifier.fillMaxWidth()
-                            ) { Text("Extra practice of today's lesson") }
-                        }
-                    }
-
-                    else -> {
-                        Button(
-                            onClick = {
-                                levelTopics.firstOrNull { it.id !in current.masteredTopicIds }
-                                    ?.let(onExtraPractice)
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) { Text("Practice something from your level") }
                     }
                 }
             }
-        }
-
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    text = "\uD83D\uDCD8 Daily verb widget",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "Little reminders on your home screen, all day",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                OutlinedButton(onClick = onOpenVerbSettings, modifier = Modifier.fillMaxWidth()) {
-                    Text("Choose verbs & schedule")
-                }
-            }
-        }
-
-        if (current.dueReviewTopics.isNotEmpty()) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
-            ) {
-                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = "\uD83D\uDD01 Reviews due: ${current.dueReviewTopics.size}",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
-                    Button(
-                        onClick = { onStartReview(current.dueReviewTopics) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text("Do the reviews") }
-                }
-            }
-        }
-
-        val weakTopics = current.weakTopicIds.mapNotNull { ProgressStore.findTopicById(it) }
-        if (weakTopics.isNotEmpty()) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
-            ) {
-                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        text = "\u26A0\uFE0F Weak spots \u2014 practice one:",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                    weakTopics.forEach { weak ->
-                        TextButton(onClick = { onExtraPractice(weak) }) {
-                            Text("\u2022 ${weak.title}")
-                        }
-                    }
-                }
-            }
-        }
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = "Your path in ${current.level.code}",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                val upcoming = levelTopics.filter {
-                    it.id !in current.masteredTopicIds && it.id != todayTopic?.id
-                }
-                if (todayTopic != null) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+            "weak" -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        Text(text = "\u2192", style = MaterialTheme.typography.bodyMedium)
                         Text(
-                            text = todayTopic.title,
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = "\u26A0\uFE0F Weak spots \u2014 practice one:",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        weakTopics.forEach { weak ->
+                            TextButton(onClick = { onExtraPractice(weak) }) {
+                                Text("\u2022 ${weak.title}")
+                            }
+                        }
+                    }
+                }
+            }
+            "ai" -> AiTeacherCard(refresh = refresh)
+            "settings" -> {
+                var showLangPicker by remember { mutableStateOf(false) }
+                val translateLang = remember { mutableStateOf(ProgressStore.translateLang(context)) }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Translate exercises",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    TextButton(onClick = { showLangPicker = true }) {
+                        Text(
+                            text = translateLang.value?.let { TranslateBank.languageName(it) } ?: "Off",
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
-                upcoming.take(3).forEachIndexed { i, t ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(text = "${i + 1}.", style = MaterialTheme.typography.bodyMedium)
-                        Text(
-                            text = t.title,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-                val more = upcoming.size - 3
-                if (more > 0) {
-                    Text(
-                        text = "+ $more more lessons in your path",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    text = "\uD83D\uDCDD Weekly essay",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "One longer write every week, judged like an exam",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                OutlinedButton(onClick = onOpenEssay, modifier = Modifier.fillMaxWidth()) {
-                    Text("Write this week's essay")
-                }
-            }
-        }
-
-        AiTeacherCard(refresh = refresh)
-
-        var settingsOpen by remember { mutableStateOf(false) }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Settings",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            TextButton(onClick = { settingsOpen = !settingsOpen }) {
-                Text(
-                    text = if (settingsOpen) "Hide" else "Show",
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-        if (settingsOpen) {
-
-            var showLangPicker by remember { mutableStateOf(false) }
-            val translateLang = remember { mutableStateOf(ProgressStore.translateLang(context)) }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Translate exercises",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                TextButton(onClick = { showLangPicker = true }) {
-                    Text(
-                        text = translateLang.value?.let { TranslateBank.languageName(it) } ?: "Off",
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-            if (showLangPicker) {
-                AlertDialog(
-                    onDismissRequest = { showLangPicker = false },
-                    confirmButton = {},
-                    title = { Text("Translate from your language") },
-                    text = {
-                        Column {
-                            TextButton(onClick = {
-                                ProgressStore.setTranslateLang(context, null)
-                                translateLang.value = null
-                                showLangPicker = false
-                            }) { Text(if (translateLang.value == null) "Off \u2713" else "Off") }
-                            TranslateBank.languages.forEach { (code, name) ->
+                if (showLangPicker) {
+                    AlertDialog(
+                        onDismissRequest = { showLangPicker = false },
+                        confirmButton = {},
+                        title = { Text("Translate from your language") },
+                        text = {
+                            Column {
                                 TextButton(onClick = {
-                                    ProgressStore.setTranslateLang(context, code)
-                                    translateLang.value = code
+                                    ProgressStore.setTranslateLang(context, null)
+                                    translateLang.value = null
                                     showLangPicker = false
-                                }) {
-                                    Text(if (translateLang.value == code) "$name \u2713" else name)
+                                }) { Text(if (translateLang.value == null) "Off \u2713" else "Off") }
+                                TranslateBank.languages.forEach { (code, name) ->
+                                    TextButton(onClick = {
+                                        ProgressStore.setTranslateLang(context, code)
+                                        translateLang.value = code
+                                        showLangPicker = false
+                                    }) {
+                                        Text(if (translateLang.value == code) "$name \u2713" else name)
+                                    }
                                 }
                             }
                         }
-                    }
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Text size",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
-                    listOf(1f to "A", 1.25f to "A+", 1.5f to "A++").forEach { (value, label) ->
-                        TextButton(onClick = { onTextScale(value) }) {
-                            Text(
-                                text = if (textScale == value) label + " \u2713" else label,
-                                fontWeight = FontWeight.Bold
-                            )
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Text size",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+                        listOf(1f to "A", 1.25f to "A+", 1.5f to "A++").forEach { (value, label) ->
+                            TextButton(onClick = { onTextScale(value) }) {
+                                Text(
+                                    text = if (textScale == value) label + " \u2713" else label,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }
+                TextButton(onClick = onStartPlacement, modifier = Modifier.fillMaxWidth()) {
+                    Text("Retake the level test")
+                }
             }
-            TextButton(onClick = onStartPlacement, modifier = Modifier.fillMaxWidth()) {
-                Text("Retake the level test")
-            }
+            else -> {}
         }
+    }
+}
+
+@Composable
+private fun Pill(text: String, active: Boolean = false, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(50),
+        colors = CardDefaults.cardColors(
+            containerColor = if (active) MaterialTheme.colorScheme.secondaryContainer
+            else MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 
