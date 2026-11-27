@@ -288,8 +288,7 @@ object Rules {
             wrong = "I cooked dinner when the phone was ringing.",
             right = "I was cooking dinner when the phone rang.",
             why = "The cooking was long and running; the ring came and finished.",
-            timeline = "PAST \u2500\u2500\u2500\u2500\u25CF\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u25CF\u2500\u2500\u2500\u2192 NOW
-   (rang)   (was cooking)",
+            timeline = "PAST \u2500\u2500\u2500\u2500\u25CF\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u25CF\u2500\u2500\u2500\u2192 NOW\n   (rang)   (was cooking)",
         ),
         "A2:will-future" to RuleSpec(
             pattern = "[any person] + [will + plain verb]",
@@ -302,8 +301,7 @@ object Rules {
             wrong = "I will to call you tomorrow.",
             right = "I will call you tomorrow.",
             why = "After will the verb comes plain \u2014 no to, no -s, no -ing.",
-            timeline = "NOW \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u25CF\u2500\u2500\u2500\u2192 FUTURE
-            (will call)",
+            timeline = "NOW \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u25CF\u2500\u2500\u2500\u2192 FUTURE\n            (will call)",
         ),
         "B1:present-perfect-continuous" to RuleSpec(
             pattern = "[I/You/We/They] + [have been + verb-ing]   [He/She/It] + [has been + verb-ing]",
@@ -316,8 +314,7 @@ object Rules {
             wrong = "I am learning English since 2022.",
             right = "I have been learning English since 2022.",
             why = "The action started in the past and still runs, so English uses have been + -ing.",
-            timeline = "PAST \u25CF\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u25CF NOW
- since 2022   still running",
+            timeline = "PAST \u25CF\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u25CF NOW\n since 2022   still running",
         ),
         "C1:verb-patterns" to RuleSpec(
             pattern = "[verb] + [small word] + [verb-ing]   accuse of \u00B7 insist on \u00B7 prevent from \u00B7 succeed in",

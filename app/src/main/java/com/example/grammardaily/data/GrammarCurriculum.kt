@@ -414,7 +414,7 @@ object GrammarCurriculum {
                     correctIndex = 0,
                     explanation = "All villages in general \u2192 no word at all: \u201CVillages are noisy.\u201D The/A would point at special villages."
                 )
-            ),,
+            ),
             Topic(
                 id = "B1:present-perfect-continuous",
                 title = "Present perfect continuous (have been + -ing)",
