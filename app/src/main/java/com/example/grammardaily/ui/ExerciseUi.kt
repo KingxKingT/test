@@ -646,12 +646,27 @@ fun PlacementScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) { Text(if (reportBusy) "Reading your written answers\u2026" else "\uD83E\uDDE0 Let the AI check my grammar") }
             } else {
-                Text(
-                    text = "\uD83E\uDDE0 AI report",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(text = aiReport!!, style = MaterialTheme.typography.bodyMedium)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "\uD83E\uDDE0 AI report",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        Text(
+                            text = aiReport!!,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
             Button(onClick = { onFinished(res) }, modifier = Modifier.fillMaxWidth()) {

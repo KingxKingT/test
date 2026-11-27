@@ -255,6 +255,48 @@ fun HomeScreen(
             }
         }
 
+        if (current.dueReviewTopics.isNotEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+            ) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "\uD83D\uDD01 Reviews due: ${current.dueReviewTopics.size}",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                    Button(
+                        onClick = { onStartReview(current.dueReviewTopics) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Do the reviews") }
+                }
+            }
+        }
+
+        val weakTopics = current.weakTopicIds.mapNotNull { ProgressStore.findTopicById(it) }
+        if (weakTopics.isNotEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+            ) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "\u26A0\uFE0F Weak spots \u2014 practice one:",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    weakTopics.forEach { weak ->
+                        TextButton(onClick = { onExtraPractice(weak) }) {
+                            Text("\u2022 ${weak.title}")
+                        }
+                    }
+                }
+            }
+        }
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -264,12 +306,6 @@ fun HomeScreen(
                     text = "Your path in ${current.level.code}",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
-                )
-                val masteredCount = levelTopics.count { it.id in current.masteredTopicIds }
-                Text(
-                    text = "\u2705 $masteredCount of ${levelTopics.size} mastered",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 val upcoming = levelTopics.filter {
                     it.id !in current.masteredTopicIds && it.id != todayTopic?.id
@@ -327,46 +363,6 @@ fun HomeScreen(
                 )
                 OutlinedButton(onClick = onOpenEssay, modifier = Modifier.fillMaxWidth()) {
                     Text("Write this week's essay")
-                }
-            }
-        }
-
-        if (current.dueReviewTopics.isNotEmpty()) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
-            ) {
-                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = "\uD83D\uDD01 Reviews due: ${current.dueReviewTopics.size}",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Button(
-                        onClick = { onStartReview(current.dueReviewTopics) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text("Do the reviews") }
-                }
-            }
-        }
-
-        val weakTopics = current.weakTopicIds.mapNotNull { ProgressStore.findTopicById(it) }
-        if (weakTopics.isNotEmpty()) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
-            ) {
-                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        text = "\u26A0\uFE0F Weak spots \u2014 practice one:",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    weakTopics.forEach { weak ->
-                        TextButton(onClick = { onExtraPractice(weak) }) {
-                            Text("\u2022 ${weak.title}")
-                        }
-                    }
                 }
             }
         }
