@@ -328,7 +328,7 @@ fun ExerciseItem(
                     color = Color(0xFF2E7D32),
                     modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
                 )
-                if (appealed) {
+                if (appealed || exercise.kind == ExKind.WRITE || exercise.kind == ExKind.TRANSLATE) {
                     Text(text = "Model answer: $shownCorrect", style = MaterialTheme.typography.bodyMedium)
                 }
             } else {
@@ -349,7 +349,8 @@ fun ExerciseItem(
             }
             if (!wasCorrect && !appealed &&
                 (exercise.kind == ExKind.TYPE || exercise.kind == ExKind.FIX ||
-                    exercise.kind == ExKind.LISTEN || exercise.kind == ExKind.WRITE)
+                    exercise.kind == ExKind.LISTEN || exercise.kind == ExKind.WRITE ||
+                    exercise.kind == ExKind.TRANSLATE)
             ) {
                 TextButton(onClick = {
                     appealed = true

@@ -46,6 +46,8 @@ import com.example.grammardaily.ui.ReviewScreen
 import com.example.grammardaily.ui.VerbExerciseScreen
 import com.example.grammardaily.ui.VerbSettingsScreen
 import com.example.grammardaily.ui.EssayScreen
+import com.example.grammardaily.widget.GrammarWidget
+import androidx.glance.appwidget.updateAll
 
 class MainActivity : ComponentActivity() {
 
@@ -84,7 +86,11 @@ fun AppRoot(verbCardRequest: MutableState<Boolean>) {
         ReminderWorker.schedule(context.applicationContext)
         VerbRotationWorker.schedule(context.applicationContext)
         AiJudge.warmUp(context.applicationContext)
-        }
+    }
+
+    LaunchedEffect(screen) {
+        GrammarWidget().updateAll(context.applicationContext)
+    }
 
     var screen by remember { mutableStateOf<AppScreen>(AppScreen.Home) }
     var homeRefresh by remember { mutableIntStateOf(0) }
