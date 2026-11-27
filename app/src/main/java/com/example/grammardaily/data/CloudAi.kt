@@ -24,6 +24,12 @@ object CloudAi {
             "Free key: kilo.ai \u2014 sign up, get your API key (about 200 free requests an hour)"
         ),
         Provider(
+            "cheapllm",
+            "https://cheapllm.shop/v1",
+            "deepseek-v4.1-flash-1017",
+            "Key: cheapllm.shop \u2014 sign up, create an API key (free tier, about 5k words an hour)"
+        ),
+        Provider(
             "Nvidia",
             "https://integrate.api.nvidia.com/v1",
             "meta/llama-3.1-8b-instruct",
