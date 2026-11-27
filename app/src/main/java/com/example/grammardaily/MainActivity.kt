@@ -124,7 +124,7 @@ fun AppRoot(verbCardRequest: MutableState<Boolean>) {
                         screen = AppScreen.TopicPractice(
                             topic = topic,
                             daily = false,
-                            exercises = ExerciseEngine.practiceSet(topic.id).shuffled()
+                            exercises = ExerciseEngine.practiceSet(topic.id, ProgressStore.translateLang(context)).shuffled()
                         )
                     },
                     onStartReview = { topics -> screen = AppScreen.Review(topics) },
@@ -152,7 +152,7 @@ fun AppRoot(verbCardRequest: MutableState<Boolean>) {
                         screen = AppScreen.TopicPractice(
                             topic = topic,
                             daily = true,
-                            exercises = ExerciseEngine.practiceSet(topic.id)
+                            exercises = ExerciseEngine.practiceSet(topic.id, ProgressStore.translateLang(context))
                         )
                     }
                 )

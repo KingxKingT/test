@@ -219,6 +219,17 @@ object ProgressStore {
     fun readWrongCounts(context: Context): Map<String, Int> =
         readWrong(prefs(context))
 
+    private const val KEY_TRANSLATE_LANG = "translate_lang"
+
+    fun translateLang(context: Context): String? =
+        prefs(context).getString(KEY_TRANSLATE_LANG, null)
+
+    fun setTranslateLang(context: Context, code: String?) {
+        val editor = prefs(context).edit()
+        if (code == null) editor.remove(KEY_TRANSLATE_LANG) else editor.putString(KEY_TRANSLATE_LANG, code)
+        editor.apply()
+    }
+
     fun recordAnswers(context: Context, results: List<ExerciseResult>) {
         if (results.isEmpty()) return
         val wrong = readWrong(prefs(context)).toMutableMap()

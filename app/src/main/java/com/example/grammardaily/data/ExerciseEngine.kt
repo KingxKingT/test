@@ -132,7 +132,23 @@ object ExerciseEngine {
             ?: reorderExercise(topicId)
             ?: mcqPool(topicId).firstOrNull()?.let { mcqExercise(it) }
 
-    fun practiceSet(topicId: String): List<Exercise> {
+    fun translateExercise(lang: String): Exercise? {
+        val pool = TranslateBank.sentences[lang].orEmpty()
+        if (pool.isEmpty()) return null
+        val day = java.time.LocalDate.now().toEpochDay().toInt()
+        val task = pool[Math.floorMod(day, pool.size)]
+        return Exercise(
+            topicId = task.topicId,
+            kind = ExKind.TRANSLATE,
+            prompt = "Translate into English: " + task.native,
+            answer = task.english,
+            accepted = listOf(task.english),
+            explanation = "Different wordings can be right \u2014 the AI judge reads yours.",
+            hint = "Say it in English in your head first, then type."
+        )
+    }
+
+    fun practiceSet(topicId: String, translateLang: String? = null): List<Exercise> {
         val mcqs = mcqPool(topicId).shuffled()
         val types = typePool(topicId).shuffled()
         val rest = buildList {
@@ -140,6 +156,7 @@ object ExerciseEngine {
             reorderExercise(topicId)?.let { add(it) }
             fixExercise(topicId)?.let { add(it) }
             writeExercise(topicId)?.let { add(it) }
+            translateLang?.let { lang -> translateExercise(lang)?.let { add(it) } }
         }
         val fillers = (types.drop(2) + listenPool(topicId)).shuffled().toMutableList()
         val result = buildList {
@@ -188,6 +205,7 @@ object ExerciseEngine {
                     ExKind.MCQ -> mcqHardest
                     ExKind.LISTEN -> null
                     ExKind.WRITE -> null
+                    ExKind.TRANSLATE -> null
                 } ?: typePool(topic.id).lastOrNull()
                     ?: reorderExercise(topic.id)
                     ?: fixExercise(topic.id)

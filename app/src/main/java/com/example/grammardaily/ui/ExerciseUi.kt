@@ -149,6 +149,8 @@ fun ExerciseItem(
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
+        } else if (exercise.kind == ExKind.TRANSLATE) {
+            Text(text = exercise.prompt, style = MaterialTheme.typography.titleLarge)
         } else {
             Text(text = exercise.prompt, style = MaterialTheme.typography.titleLarge)
             LaunchedEffect(exercise) { Audio.init(context) }
@@ -235,7 +237,7 @@ fun ExerciseItem(
                 }
             }
 
-            ExKind.TYPE, ExKind.FIX, ExKind.LISTEN, ExKind.WRITE -> {
+            ExKind.TYPE, ExKind.FIX, ExKind.LISTEN, ExKind.WRITE, ExKind.TRANSLATE -> {
                 if (!checked) {
                     OutlinedTextField(
                         value = typed,

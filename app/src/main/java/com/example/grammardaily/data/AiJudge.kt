@@ -235,7 +235,7 @@ object AiJudge {
     }
 
     private fun heuristic(context: Context, exercise: Exercise, given: String): JudgeResult? {
-        if (exercise.kind == ExKind.WRITE) return null
+        if (exercise.kind == ExKind.WRITE || exercise.kind == ExKind.TRANSLATE) return null
         val input = ExerciseEngine.normalize(given)
         if (input.isBlank()) return null
 
@@ -406,6 +406,12 @@ object AiJudge {
                         false
                     )
                 }
+            } else if (exercise.kind == ExKind.TRANSLATE) {
+                JudgeResult(
+                    true,
+                    "No AI model installed, so nobody checked it \u2014 compare yours with the model answer below.",
+                    false
+                )
             } else {
                 JudgeResult(false, fallbackNote, false)
             }
@@ -414,7 +420,15 @@ object AiJudge {
         val target = exercise.accepted.firstOrNull() ?: exercise.answer
         val prompt = buildString {
             append("You are a strict but fair grammar teacher. ")
-            if (exercise.kind == ExKind.WRITE) {
+            if (exercise.kind == ExKind.TRANSLATE) {
+                append("The student was asked to translate a sentence into English. ")
+                append("Original sentence: ")
+                append(exercise.prompt.substringAfter("Translate into English: ", exercise.prompt)).append("\n")
+                append("Model answer: ").append(exercise.answer).append("\n")
+                append("Student translation: ").append(given.trim()).append("\n")
+                append("Is the student's translation correct English with the same meaning, even if worded differently? ")
+                append("Reply with exactly one word: YES or NO.")
+            } else if (exercise.kind == ExKind.WRITE) {
                 append("The student was asked to write their own sentence. ")
                 append("The task: ").append(exercise.prompt).append("\n")
                 append("Example of the pattern (they must not just copy it): ").append(exercise.answer).append("\n")

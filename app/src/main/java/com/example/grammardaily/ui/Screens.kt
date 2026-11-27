@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
@@ -51,6 +52,7 @@ import com.example.grammardaily.data.QuestionBank
 import com.example.grammardaily.data.QuizQuestion
 import com.example.grammardaily.data.Rules
 import com.example.grammardaily.data.Topic
+import com.example.grammardaily.data.TranslateBank
 
 sealed interface AppScreen {
     data object Home : AppScreen
@@ -353,6 +355,50 @@ fun HomeScreen(
 
         AiTeacherCard(refresh = refresh)
 
+        var showLangPicker by remember { mutableStateOf(false) }
+        val translateLang = remember { mutableStateOf(ProgressStore.translateLang(context)) }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Translate exercises",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            TextButton(onClick = { showLangPicker = true }) {
+                Text(
+                    text = translateLang.value?.let { TranslateBank.languageName(it) } ?: "Off",
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+        if (showLangPicker) {
+            AlertDialog(
+                onDismissRequest = { showLangPicker = false },
+                confirmButton = {},
+                title = { Text("Translate from your language") },
+                text = {
+                    Column {
+                        TextButton(onClick = {
+                            ProgressStore.setTranslateLang(context, null)
+                            translateLang.value = null
+                            showLangPicker = false
+                        }) { Text(if (translateLang.value == null) "Off \u2713" else "Off") }
+                        TranslateBank.languages.forEach { (code, name) ->
+                            TextButton(onClick = {
+                                ProgressStore.setTranslateLang(context, code)
+                                translateLang.value = code
+                                showLangPicker = false
+                            }) {
+                                Text(if (translateLang.value == code) "$name \u2713" else name)
+                            }
+                        }
+                    }
+                }
+            )
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
