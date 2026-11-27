@@ -600,7 +600,10 @@ fun AiTeacherCard(refresh: Int) {
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
-                val provider = CloudAi.providers[cloudProviderIdx]
+                val provider = if (cloudProviderIdx < CloudAi.providers.size)
+                    CloudAi.providers[cloudProviderIdx]
+                else
+                    CloudAi.customProvider(context)
                 Text(
                     text = "The AI on this phone is small, so it can be slow. With a free API key, answers come from a fast cloud AI instead \u2014 about a second instead of half a minute. " + provider.note + ". Privacy: while this is on, your written answers and essays are sent to that company's servers to be checked. Turn it off and everything stays on your phone.",
                     style = MaterialTheme.typography.bodySmall,
@@ -697,7 +700,7 @@ fun AiTeacherCard(refresh: Int) {
                     Text(text = cloudStatus, style = MaterialTheme.typography.bodySmall)
                 }
                 Text(
-                    text = "Build 19 \u2014 cloud AI options: Kilo \u00b7 cheapllm \u00b7 Nvidia \u00b7 Groq \u00b7 OpenRouter \u00b7 Custom. If you cannot see this line, you are running an older app.",
+                    text = "Build 19.1 \u2014 cloud AI options: Kilo \u00b7 cheapllm \u00b7 Nvidia \u00b7 Groq \u00b7 OpenRouter \u00b7 Custom. If you cannot see this line, you are running an older app.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
