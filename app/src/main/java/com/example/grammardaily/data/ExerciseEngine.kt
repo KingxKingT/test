@@ -177,6 +177,7 @@ object ExerciseEngine {
             ExKind.FIX -> fixExercise(topicId)
             ExKind.LISTEN -> listenPool(topicId).randomOrNull()
             ExKind.WRITE -> writeExercise(topicId)
+            ExKind.TRANSLATE -> null
             ExKind.MCQ -> mcqPool(topicId).randomOrNull()?.let { mcqExercise(it) }
         }
         if (primary != null) return primary
