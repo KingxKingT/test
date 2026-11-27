@@ -82,7 +82,7 @@ fun EssayScreen(onExit: () -> Unit) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Aim for 100-150 words. Write freely, then let the judge grade it like an exam.",
+                    text = "Aim for 100-150 words. Write freely, then let the AI grade it like an exam.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -117,8 +117,8 @@ fun EssayScreen(onExit: () -> Unit) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                if (busy) "The judge is reading your essay..."
-                else "\uD83E\uDDE0 Judge my essay"
+                if (busy) "The AI is reading your essay..."
+                else "\uD83E\uDDE0 Grade my essay"
             )
         }
         feedback?.let { f ->
@@ -131,7 +131,7 @@ fun EssayScreen(onExit: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
-                        text = "The judge says",
+                        text = "The AI says",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )

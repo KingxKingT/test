@@ -272,7 +272,7 @@ fun ExerciseItem(
                     ) { Text(if (judging) "Judging\u2026" else "Check") }
                     if (judging) {
                         Text(
-                            text = "The AI judge is reading your answer\u2026",
+                            text = "Laya is reading your answer\u2026",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
@@ -556,10 +556,10 @@ fun PlacementScreen(
                     },
                     enabled = !reportBusy,
                     modifier = Modifier.fillMaxWidth()
-                ) { Text(if (reportBusy) "Reading your written answers\u2026" else "\uD83E\uDDE0 Let the AI judge my grammar") }
+                ) { Text(if (reportBusy) "Reading your written answers\u2026" else "\uD83E\uDDE0 Let the AI check my grammar") }
             } else {
                 Text(
-                    text = "\uD83E\uDDE0 AI judge",
+                    text = "\uD83E\uDDE0 AI report",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )

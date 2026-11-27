@@ -295,7 +295,7 @@ object AiJudge {
 
     fun essayJudgeBlocking(context: Context, essayText: String): String {
         if (essayText.isBlank()) {
-            return "Write something first, then the judge will grade it."
+            return "Write something first, then the AI will grade it."
         }
         val prompt = "You are a strict but fair English exam judge. The learner wrote this essay:\n\n" +
             essayText.trim() +
@@ -308,14 +308,14 @@ object AiJudge {
         val ai = serviceAskBlocking(context, prompt)
         if (!ai.isNullOrBlank()) return ai.trim()
         if (isDisabled(context)) {
-            return "The AI judge is switched off after slow answers, so nobody graded this. Open the AI judge card on the Home screen and tap \u201cTurn the AI back on\u201d \u2014 no download needed."
+            return "The AI is switched off after slow answers, so nobody graded this. Open the Laya card on the Home screen and tap \u201cTurn the AI back on\u201d \u2014 no download needed."
         }
         val words = essayText.trim().split(Regex("\\s+")).count { it.isNotBlank() }
         val connectors = listOf(
             "however", "although", "which", "because", "despite",
             "whereas", "therefore", "moreover", "even though"
         ).count { essayText.lowercase().contains(it) }
-        return "No AI model installed, so nobody graded this. Download one from the AI judge card on the Home screen.\n" +
+        return "No AI model installed, so nobody graded this. Download one from the Laya card on the Home screen.\n" +
             "Meanwhile, two honest numbers: $words words (a C1 essay usually needs 150+), and $connectors connecting words like however or although (strong essays use 3 or more)."
     }
 
@@ -348,7 +348,7 @@ object AiJudge {
                 val bullets = lines.filter { it.trim().startsWith("-") }.take(5)
                 if (bullets.isNotEmpty()) {
                     return buildString {
-                        if (levelLine != null) append("AI judge: your grammar level is " + levelLine + ".\n")
+                        if (levelLine != null) append("AI: your grammar level is " + levelLine + ".\n")
                         append("What to learn next:\n")
                         bullets.forEach { append(it.trim()).append("\n") }
                     }.trim()
@@ -361,7 +361,7 @@ object AiJudge {
             .sortedBy { (topic, c, t) -> c.toDouble() / t }
             .take(3)
         return buildString {
-            append("Checked your answers without the AI model. Download one from the AI judge card on the Home screen to get AI-judged reports.\n")
+            append("Checked your answers without the AI model. Download one from the Laya card on the Home screen to get AI-checked reports.\n")
             append("Level: " + level.code + " \u2014 " + level.title + ".\n")
             if (weak.isEmpty()) {
                 append("No weak topics in this test \u2014 keep going with your daily lessons.")
@@ -419,7 +419,7 @@ object AiJudge {
 
         val target = exercise.accepted.firstOrNull() ?: exercise.answer
         val prompt = buildString {
-            append("You are a strict but fair grammar teacher. ")
+            append("You are Laya, a silent judge. You never talk \u2014 you only decide. ")
             if (exercise.kind == ExKind.TRANSLATE) {
                 append("The student was asked to translate a sentence into English. ")
                 append("Original sentence: ")
@@ -473,10 +473,10 @@ object AiJudge {
         val localMatch = exercise.kind != ExKind.WRITE &&
             ExerciseEngine.closeEnough(given.trim(), target)
         return when {
-            verdictWord == "YES" -> JudgeResult(true, "The AI judge accepted your answer.", true)
+            verdictWord == "YES" -> JudgeResult(true, "Laya accepted your answer.", true)
             verdictWord == null && localMatch -> JudgeResult(
                 true,
-                "The judge replied unclearly, but your answer matches the correct one.",
+                "Laya replied unclearly, but your answer matches the correct one.",
                 true
             )
             localMatch -> JudgeResult(true, "Your answer matches the correct one.", true)
@@ -484,7 +484,7 @@ object AiJudge {
                 if (exercise.kind == ExKind.WRITE || exercise.kind == ExKind.TRANSLATE) {
                     JudgeResult(
                         true,
-                        "The judge could not read its own reply, so nobody checked this one \u2014 compare yours with the model answer below.",
+                        "Laya could not decide this time, so nobody checked this one \u2014 compare yours with the model answer below.",
                         false
                     )
                 } else {

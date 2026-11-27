@@ -109,7 +109,7 @@ object ExerciseEngine {
             sentence = task.example,
             answer = task.example,
             accepted = listOf(task.example),
-            explanation = "Nobody has one right sentence here. The AI judge reads yours.",
+            explanation = "Nobody has one right sentence here. Laya reads yours.",
             hint = "Speak the pattern in your head first, then type it."
         )
     }
@@ -143,7 +143,7 @@ object ExerciseEngine {
             prompt = "Translate into English: " + task.native,
             answer = task.english,
             accepted = listOf(task.english),
-            explanation = "Different wordings can be right \u2014 the AI judge reads yours.",
+            explanation = "Different wordings can be right \u2014 Laya reads yours.",
             hint = "Say it in English in your head first, then type."
         )
     }

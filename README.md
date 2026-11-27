@@ -129,3 +129,20 @@ app/src/main/java/com/example/grammardaily/
   widget/
     GrammarWidget.kt     # Glance home-screen widget
 ```
+
+## The two AIs
+
+The app has two AI roles, and the names on screen mean different things:
+
+- **Laya — the judge.** Silent. It never writes text; it only decides
+  right / wrong on your typed answers, fully offline. Named after the
+  open-source decision-model idea (typed decisions, no talking). Under the
+  hood it currently runs a small on-device model (Gemma 3 1B) in
+  decision mode; when a real Laya Android runtime ships, the judge can be
+  swapped without touching the rest of the app.
+- **The AI — the talker.** A normal generative AI that writes:
+  essay grades and feedback, level reports on your placement test. Same
+  on-device model today, but used in its normal, talking mode.
+
+One download (~529 MB) powers both roles. Without it, a built-in checker
+does the judging and says so honestly.

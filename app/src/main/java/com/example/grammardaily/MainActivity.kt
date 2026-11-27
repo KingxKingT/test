@@ -166,7 +166,7 @@ fun AppRoot(verbCardRequest: MutableState<Boolean>) {
                 is AppScreen.TopicPractice -> ExerciseRunner(
                     title = current.topic.title,
                     subtitle = if (current.daily)
-                        "Practice on the rule you just learned \u2014 the AI judge grades your writing fairly, and mistakes just mean more teaching."
+                        "Practice on the rule you just learned \u2014 Laya grades your writing fairly, and mistakes just mean more teaching."
                     else
                         "Extra practice \u2014 hints help you learn; nothing is at stake.",
                     exercises = current.exercises,

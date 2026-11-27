@@ -388,7 +388,7 @@ fun AiTeacherCard(refresh: Int) {
                     ready = ok
                     status = if (ok) {
                         val mb = AiJudge.modelFile(context).length() / (1024 * 1024)
-                        "Model installed ($mb MB) \u2014 the AI judge is now active."
+                        "Model installed ($mb MB) \u2014 Laya and the AI are now active."
                     } else {
                         "Import failed \u2014 the file could not be read or is too small."
                     }
@@ -409,7 +409,7 @@ fun AiTeacherCard(refresh: Int) {
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "\uD83E\uDDE0 AI judge (optional)",
+                        text = "\uD83E\uDDE0 Laya & the AI (optional)",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -420,9 +420,9 @@ fun AiTeacherCard(refresh: Int) {
                                 val (d, t) = downProgress!!
                                 "Downloading \u2014 ${d / (1024 * 1024)} of ${t / (1024 * 1024)} MB"
                             }
-                            ready && !disabled -> "Installed \u2014 judging your written answers, offline."
-                            ready && disabled -> "The judge switched itself off after slow answers. Your model is still installed \u2014 no download needed."
-                            else -> "A small open-source AI can judge your written answers."
+                            ready && !disabled -> "Installed \u2014 Laya judges answers, the AI handles essays, offline."
+                            ready && disabled -> "Laya switched itself off after slow answers. Your model is still installed \u2014 no download needed."
+                            else -> "One small download adds Laya (silent judge) and the AI (essays + level reports)."
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -434,7 +434,7 @@ fun AiTeacherCard(refresh: Int) {
             }
             if (expanded) {
                 Text(
-                    text = "Written answers are judged by the built-in checker. Download a small open-source AI (Gemma 3 1B) and it will judge them instead \u2014 accepting different wordings a simple checker would call wrong. It never talks; it only judges, fully offline.",
+                    text = "Written answers are checked by the built-in checker. Download the AI (Gemma 3 1B) and Laya judges your written answers \u2014 accepting different wordings a simple checker would call wrong \u2014 while the AI grades essays and level reports. Both run fully offline; Laya never talks.",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 if (status.isNotBlank()) {
@@ -442,7 +442,7 @@ fun AiTeacherCard(refresh: Int) {
                 }
                 if (disabled && ready) {
                     Text(
-                        text = "After 3 slow answers the AI judge switches itself off to keep the app fast. Your model is still on this phone \u2014 turning it back on needs no download.",
+                        text = "After 3 slow answers Laya switches itself off to keep the app fast. Your model is still on this phone \u2014 turning it back on needs no download.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
@@ -453,7 +453,7 @@ fun AiTeacherCard(refresh: Int) {
                                 kotlinx.coroutines.withContext(Dispatchers.Main) {
                                     disabled = false
                                     ready = true
-                                    status = "The AI judge is back on."
+                                    status = "Laya is back on."
                                 }
                             }
                         },
@@ -491,7 +491,7 @@ fun AiTeacherCard(refresh: Int) {
                                         downProgress = null
                                         ready = ok
                                         status = if (ok)
-                                            "Model downloaded \u2014 the AI judge is now active."
+                                            "Model downloaded \u2014 Laya and the AI are now active."
                                         else
                                             "Download failed \u2014 check your internet, or use Import below."
                                     }
