@@ -9,10 +9,19 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.ResultReceiver
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
+import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.coroutines.resume
@@ -48,6 +57,41 @@ object AiJudge {
     }
 
     fun isModelReady(context: Context): Boolean = modelFile(context).length() > 1_000_000
+
+    data class DownloadState(
+        val running: Boolean = false,
+        val downloaded: Long = 0L,
+        val total: Long = 0L,
+        val name: String = "",
+        val done: Boolean = false,
+        val failed: Boolean = false
+    )
+
+    private val downloadScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val _downloadState = MutableStateFlow(DownloadState())
+    val downloadState: StateFlow<DownloadState> = _downloadState.asStateFlow()
+    private var downloadJob: Job? = null
+
+    fun startDownload(context: Context) {
+        if (_downloadState.value.running) return
+        val appCtx = context.applicationContext
+        _downloadState.value = DownloadState(running = true)
+        downloadJob = downloadScope.launch {
+            var ok = false
+            for (model in downloadableModels) {
+                _downloadState.value = _downloadState.value.copy(name = model.name)
+                ok = downloadBlocking(appCtx, model.url) { d, t ->
+                    _downloadState.value = _downloadState.value.copy(downloaded = d, total = t)
+                }
+                if (ok) break
+            }
+            _downloadState.value = _downloadState.value.copy(
+                running = false,
+                done = ok,
+                failed = !ok
+            )
+        }
+    }
 
     private fun aiPrefs(context: Context) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -123,6 +167,11 @@ object AiJudge {
         }
     }
 
+    fun askAiBlocking(context: Context, prompt: String): String? {
+        if (!isModelReady(context)) return null
+        return serviceAskBlocking(context, prompt)
+    }
+
     fun warmUp(context: Context) {
         if (isDisabled(context) || !isModelReady(context)) return
         try {
@@ -175,21 +224,27 @@ object AiJudge {
     fun downloadBlocking(context: Context, url: String, onProgress: (downloaded: Long, total: Long) -> Unit): Boolean {
         val target = modelFile(context)
         val tmp = File(target.absolutePath + ".downloading")
+        val existing = if (tmp.exists()) tmp.length() else 0L
         try {
-            tmp.outputStream().use { output ->
-                val conn = URL(url).openConnection() as HttpURLConnection
-                conn.instanceFollowRedirects = true
-                conn.connectTimeout = 30000
-                conn.readTimeout = 60000
-                conn.connect()
-                if (conn.responseCode !in 200..299) {
-                    conn.disconnect()
-                    return false
-                }
-                val total = conn.contentLengthLong
+            val conn = URL(url).openConnection() as HttpURLConnection
+            conn.instanceFollowRedirects = true
+            conn.connectTimeout = 30000
+            conn.readTimeout = 60000
+            if (existing > 0L) conn.setRequestProperty("Range", "bytes=$existing-")
+            conn.connect()
+            val code = conn.responseCode
+            if (code !in 200..299) {
+                conn.disconnect()
+                if (existing < 1_000_000) tmp.delete()
+                return false
+            }
+            val resuming = code == 206 && existing > 0L
+            val total = if (resuming) existing + conn.contentLengthLong else conn.contentLengthLong
+            var read = if (resuming) existing else 0L
+            if (total > 0L && read > 0L) onProgress(read, total)
+            FileOutputStream(tmp, resuming).use { output ->
                 conn.inputStream.use { input ->
                     val buf = ByteArray(1 shl 16)
-                    var read = 0L
                     var n = input.read(buf)
                     while (n >= 0) {
                         output.write(buf, 0, n)
@@ -198,19 +253,21 @@ object AiJudge {
                         n = input.read(buf)
                     }
                 }
-                conn.disconnect()
             }
-            if (tmp.length() < 1_000_000) {
-                tmp.delete()
+            conn.disconnect()
+            if (tmp.length() < 200_000_000 || (total > 0L && tmp.length() < total)) {
                 return false
             }
             if (target.exists()) target.delete()
-            tmp.renameTo(target)
+            if (!tmp.renameTo(target)) {
+                tmp.delete()
+                return false
+            }
             resetFailures(context)
             warmUp(context)
             return true
         } catch (e: Exception) {
-            tmp.delete()
+            if (tmp.exists() && tmp.length() < 1_000_000) tmp.delete()
             return false
         }
     }

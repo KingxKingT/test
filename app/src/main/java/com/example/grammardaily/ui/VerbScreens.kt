@@ -43,6 +43,8 @@ import com.example.grammardaily.widget.VerbWidget
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.glance.appwidget.updateAll
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import com.example.grammardaily.data.AiJudge
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -373,9 +375,10 @@ fun AiTeacherCard(refresh: Int) {
     var disabled by remember(refresh) { mutableStateOf(AiJudge.isDisabled(context)) }
     var status by remember(refresh) { mutableStateOf("") }
     var importing by remember { mutableStateOf(false) }
-    var downProgress by remember { mutableStateOf<Pair<Long, Long>?>(null) }
-    var downName by remember { mutableStateOf("") }
+    var testLoading by remember { mutableStateOf(false) }
+    var testResult by remember { mutableStateOf<String?>(null) }
     var expanded by remember(refresh) { mutableStateOf(false) }
+    val dl by AiJudge.downloadState.collectAsState()
     val picker = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
@@ -394,6 +397,15 @@ fun AiTeacherCard(refresh: Int) {
                     }
                 }
             }
+        }
+    }
+
+    LaunchedEffect(dl.done, dl.failed) {
+        if (dl.done) {
+            ready = true
+            status = "Model downloaded \u2014 Laya and the AI are now active."
+        } else if (dl.failed && !dl.running) {
+            status = "Download stopped \u2014 it will continue from where it stopped when you press Download again."
         }
     }
 
@@ -416,9 +428,11 @@ fun AiTeacherCard(refresh: Int) {
                     Text(
                         text = when {
                             importing -> "Importing model\u2026"
-                            downProgress != null -> {
-                                val (d, t) = downProgress!!
-                                "Downloading \u2014 ${d / (1024 * 1024)} of ${t / (1024 * 1024)} MB"
+                            dl.running -> {
+                                val mb = dl.downloaded / (1024 * 1024)
+                                val totalMb = dl.total / (1024 * 1024)
+                                if (totalMb > 0) "Downloading \u2014 $mb of $totalMb MB (${mb * 100 / totalMb.coerceAtLeast(1)}%)"
+                                else "Downloading \u2014 $mb MB so far"
                             }
                             ready && !disabled -> "Installed \u2014 Laya judges answers, the AI handles essays, offline."
                             ready && disabled -> "Laya switched itself off after slow answers. Your model is still installed \u2014 no download needed."
@@ -461,14 +475,13 @@ fun AiTeacherCard(refresh: Int) {
                     ) { Text("Turn the AI back on") }
                 }
                 when {
-                    downProgress != null -> {
-                        val (d, t) = downProgress!!
+                    dl.running -> {
                         LinearProgressIndicator(
-                            progress = { (d.toDouble() / t.coerceAtLeast(1)).toFloat() },
+                            progress = { if (dl.total > 0) (dl.downloaded.toDouble() / dl.total).toFloat() else 0f },
                             modifier = Modifier.fillMaxWidth()
                         )
                         Text(
-                            text = "Downloading ${downName} \u2014 keep the app open",
+                            text = "Downloading ${dl.name} \u2014 you can close this section or the app; the download keeps going and continues where it stopped.",
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -476,26 +489,8 @@ fun AiTeacherCard(refresh: Int) {
                     !ready -> {
                         Button(
                             onClick = {
-                                downName = "AI model"
                                 status = ""
-                                scope.launch(Dispatchers.IO) {
-                                    var ok = false
-                                    for (model in AiJudge.downloadableModels) {
-                                        kotlinx.coroutines.withContext(Dispatchers.Main) { downName = model.name }
-                                        ok = AiJudge.downloadBlocking(context, model.url) { d, t ->
-                                            downProgress = d to t
-                                        }
-                                        if (ok) break
-                                    }
-                                    kotlinx.coroutines.withContext(Dispatchers.Main) {
-                                        downProgress = null
-                                        ready = ok
-                                        status = if (ok)
-                                            "Model downloaded \u2014 Laya and the AI are now active."
-                                        else
-                                            "Download failed \u2014 check your internet, or use Import below."
-                                    }
-                                }
+                                AiJudge.startDownload(context)
                             },
                             enabled = !importing,
                             modifier = Modifier.fillMaxWidth()
@@ -506,13 +501,45 @@ fun AiTeacherCard(refresh: Int) {
                             modifier = Modifier.fillMaxWidth()
                         ) { Text("Or import a model file from your phone") }
                         Text(
-                            text = "The model is 529 MB and downloads once; afterwards everything runs offline. You can delete it anytime to free space.",
+                            text = "The model is 529 MB and downloads once; afterwards everything runs offline. A stopped download continues from where it stopped \u2014 it never restarts from zero. You can delete it anytime to free space.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
                     else -> {
+                        Text(
+                            text = "Stored safely inside the app's private storage \u2014 updates of the app do not delete it. Size: ${AiJudge.modelFile(context).length() / (1024 * 1024)} MB.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Button(
+                            onClick = {
+                                testLoading = true
+                                testResult = null
+                                scope.launch(Dispatchers.IO) {
+                                    val reply = AiJudge.askAiBlocking(context, "Reply with the single word OK.")
+                                    kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                        testLoading = false
+                                        testResult = reply?.trim()
+                                            ?: "No answer \u2014 the model file may be damaged. Delete it below and download again."
+                                    }
+                                }
+                            },
+                            enabled = !testLoading && !importing,
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text(if (testLoading) "\uD83E\uDDE0 Waking the AI\u2026" else "\uD83E\uDDE0 Test the AI \u2014 is it really working?") }
+                        if (testResult != null) {
+                            Text(
+                                text = if (testResult == "OK" || testResult!!.startsWith("OK"))
+                                    "\u2705 The AI answered \u2014 Laya and the AI are live on this phone."
+                                else
+                                    testResult!!,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (testResult == "OK" || testResult!!.startsWith("OK")) MaterialTheme.colorScheme.tertiary
+                                else MaterialTheme.colorScheme.error
+                            )
+                        }
                         Button(
                             onClick = { picker.launch("*/*") },
                             enabled = !importing,
@@ -523,6 +550,7 @@ fun AiTeacherCard(refresh: Int) {
                                 AiJudge.deleteModel(context)
                                 disabled = false
                                 ready = false
+                                testResult = null
                                 status = "Model deleted \u2014 the built-in checker judges again."
                             },
                             modifier = Modifier.fillMaxWidth()

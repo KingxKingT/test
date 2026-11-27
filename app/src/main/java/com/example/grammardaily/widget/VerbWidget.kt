@@ -68,71 +68,102 @@ class VerbWidget : GlanceAppWidget() {
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(GlanceTheme.colors.background)
-                .padding(10.dp)
+                .padding(12.dp)
                 .clickable(actionStartActivity(intent)),
             verticalAlignment = Alignment.Vertical.Top
         ) {
-            Row(modifier = GlanceModifier.fillMaxWidth()) {
+            Row(
+                modifier = GlanceModifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = GlanceModifier
+                        .background(GlanceTheme.colors.secondaryContainer)
+                        .cornerRadius(12.dp)
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = event.tenseName,
+                        style = TextStyle(
+                            color = GlanceTheme.colors.onSecondaryContainer,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        maxLines = 1
+                    )
+                }
+                Spacer(modifier = GlanceModifier.defaultWeight())
                 Text(
-                    text = "Daily verb \u00b7 ${event.verb}",
+                    text = event.verb.uppercase(),
                     style = TextStyle(
-                        color = GlanceTheme.colors.onSurface,
-                        fontSize = 13.sp,
+                        color = GlanceTheme.colors.secondary,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     ),
-                    modifier = GlanceModifier.defaultWeight()
-                )
-                Text(
-                    text = if (known) "\u2714 known" else event.tenseName,
-                    style = TextStyle(color = GlanceTheme.colors.secondary, fontSize = 13.sp)
+                    maxLines = 1
                 )
             }
-            Text(
-                text = event.formsLine,
-                style = TextStyle(color = GlanceTheme.colors.secondary, fontSize = 13.sp)
-            )
-            Spacer(modifier = GlanceModifier.height(4.dp))
+            Spacer(modifier = GlanceModifier.height(6.dp))
             Text(
                 text = event.main,
                 style = TextStyle(
                     color = GlanceTheme.colors.onSurface,
-                    fontSize = 15.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
-                )
+                ),
+                maxLines = 2
             )
+            Spacer(modifier = GlanceModifier.height(2.dp))
             Text(
                 text = event.useLine,
-                style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 13.sp)
+                style = TextStyle(
+                    color = GlanceTheme.colors.onSurface,
+                    fontSize = 12.sp
+                ),
+                maxLines = 2
             )
             Spacer(modifier = GlanceModifier.height(4.dp))
             Text(
                 text = event.alt,
-                style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 13.sp)
+                style = TextStyle(
+                    color = GlanceTheme.colors.secondary,
+                    fontSize = 11.sp
+                ),
+                maxLines = 2
+            )
+            Text(
+                text = event.formsLine,
+                style = TextStyle(
+                    color = GlanceTheme.colors.secondary,
+                    fontSize = 11.sp
+                ),
+                maxLines = 1
             )
             Spacer(modifier = GlanceModifier.defaultWeight())
             Row(modifier = GlanceModifier.fillMaxWidth()) {
                 Row(
                     modifier = GlanceModifier
                         .background(GlanceTheme.colors.primary)
-                        .cornerRadius(8.dp)
+                        .cornerRadius(10.dp)
                         .padding(horizontal = 10.dp, vertical = 6.dp)
                         .clickable(actionRunCallback<KnownVerbAction>()),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "\u2714 I know this",
+                        text = if (known) "\u2714 Known" else "\u2714 I know this",
                         style = TextStyle(
                             color = GlanceTheme.colors.onPrimary,
-                            fontSize = 13.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
-                        )
+                        ),
+                        maxLines = 1
                     )
                 }
                 Spacer(modifier = GlanceModifier.width(8.dp))
                 Row(
                     modifier = GlanceModifier
                         .background(GlanceTheme.colors.secondaryContainer)
-                        .cornerRadius(8.dp)
+                        .cornerRadius(10.dp)
                         .padding(horizontal = 10.dp, vertical = 6.dp)
                         .clickable(actionRunCallback<ShowAgainVerbAction>()),
                     verticalAlignment = Alignment.CenterVertically
@@ -141,8 +172,9 @@ class VerbWidget : GlanceAppWidget() {
                         text = "\u21bb Show again",
                         style = TextStyle(
                             color = GlanceTheme.colors.onSecondaryContainer,
-                            fontSize = 13.sp
-                        )
+                            fontSize = 12.sp
+                        ),
+                        maxLines = 1
                     )
                 }
             }

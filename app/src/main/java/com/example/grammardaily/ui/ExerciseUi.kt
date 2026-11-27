@@ -118,6 +118,8 @@ fun ExerciseItem(
     var placedIdx by remember(exercise) { mutableStateOf(listOf<Int>()) }
     var showAudioText by remember(exercise) { mutableStateOf(false) }
     var hintOpen by remember(exercise) { mutableStateOf(false) }
+    var whyLoading by remember(exercise) { mutableStateOf(false) }
+    var whyText by remember(exercise) { mutableStateOf<String?>(null) }
 
     val target = exercise.accepted.firstOrNull() ?: exercise.answer
 
@@ -434,6 +436,44 @@ fun ExerciseItem(
                         if (judgedNote != null) {
                             Text(
                                 text = judgedNote!!,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                        TextButton(onClick = {
+                            if (whyLoading) return@TextButton
+                            whyLoading = true
+                            val given = when (exercise.kind) {
+                                ExKind.MCQ -> exercise.options.getOrNull(selected) ?: ""
+                                ExKind.REORDER -> placedIdx.mapNotNull { exercise.words.getOrNull(it) }
+                                    .joinToString(" ")
+                                else -> typed
+                            }
+                            val prompt = buildString {
+                                append("You are an English teacher. Explain in ONE short sentence, using simple A2-level words, why the learner's answer is wrong. ")
+                                append("Exercise: ").append(exercise.prompt)
+                                if (exercise.sentence.isNotBlank()) append(" Sentence: ").append(exercise.sentence)
+                                append(" Correct answer: ").append(shownCorrect)
+                                append(" Learner's answer: ").append(given.ifBlank { "(empty)" })
+                            }
+                            scope.launch(Dispatchers.IO) {
+                                val reply = AiJudge.askAiBlocking(context, prompt)
+                                withContext(Dispatchers.Main) {
+                                    whyLoading = false
+                                    whyText = reply?.takeIf { it.isNotBlank() }
+                                        ?: "The AI could not answer. Install it from the Laya section on the home screen, then ask again."
+                                }
+                            }
+                        }) {
+                            Text(
+                                text = if (whyLoading) "\uD83E\uDDE0 Asking the AI\u2026"
+                                else "\uD83D\uDCA1 Why? Ask the AI",
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                        if (whyText != null) {
+                            Text(
+                                text = whyText!!,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onErrorContainer
                             )
