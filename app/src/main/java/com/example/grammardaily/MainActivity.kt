@@ -88,12 +88,12 @@ fun AppRoot(verbCardRequest: MutableState<Boolean>) {
         AiJudge.warmUp(context.applicationContext)
     }
 
+    var screen by remember { mutableStateOf<AppScreen>(AppScreen.Home) }
+    var homeRefresh by remember { mutableIntStateOf(0) }
+
     LaunchedEffect(screen) {
         GrammarWidget().updateAll(context.applicationContext)
     }
-
-    var screen by remember { mutableStateOf<AppScreen>(AppScreen.Home) }
-    var homeRefresh by remember { mutableIntStateOf(0) }
 
     fun goHome() {
         screen = AppScreen.Home
