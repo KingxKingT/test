@@ -178,8 +178,14 @@ object ProgressStore {
                 "Find your English level" to "Take the 15-question mixed grammar test in Grammar Daily \u2014 it takes 5 minutes."
             state.dueReviewTopics.isNotEmpty() ->
                 pickMemoryLine(state.dueReviewTopics, "Review due: ")
-            state.todayLessonDone && state.todayLessonTopicId == null ->
-                "Grammar Daily" to "Streak: ${state.streakDays} days. See you tomorrow for the next lesson!"
+            state.todayLessonDone -> {
+                val nextTopic = state.todayLessonTopicId?.let { findTopic(it) }
+                if (nextTopic != null) {
+                    "Well done today!" to "Today's lesson is finished. ${nextTopic.title} is waiting for tomorrow \u2014 or practice it again now if you like."
+                } else {
+                    "Grammar Daily" to "Streak: ${state.streakDays} days. See you tomorrow for the next lesson!"
+                }
+            }
             else -> {
                 val topic = state.todayLessonTopicId?.let { findTopic(it) } ?: return null
                 pickMemoryLine(listOf(topic), "Today: ")
