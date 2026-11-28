@@ -700,7 +700,7 @@ fun AiTeacherCard(refresh: Int) {
                     Text(text = cloudStatus, style = MaterialTheme.typography.bodySmall)
                 }
                 Text(
-                    text = "Build 19.1 \u2014 cloud AI options: Kilo \u00b7 cheapllm \u00b7 Nvidia \u00b7 Groq \u00b7 OpenRouter \u00b7 Custom. If you cannot see this line, you are running an older app.",
+                    text = "Build 20 \u2014 cloud AI: Kilo \u00b7 cheapllm \u00b7 Nvidia \u00b7 Groq \u00b7 OpenRouter \u00b7 Custom. If you cannot see this line, you are running an older app.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

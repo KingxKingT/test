@@ -44,12 +44,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.rememberCoroutineScope
 import com.example.grammardaily.data.AiJudge
+import com.example.grammardaily.data.CloudAi
 import com.example.grammardaily.data.ExKind
+import com.example.grammardaily.data.Feedback
 import com.example.grammardaily.data.Exercise
 import com.example.grammardaily.data.ExerciseEngine
 import com.example.grammardaily.data.ExerciseResult
 import com.example.grammardaily.data.Placement
 import com.example.grammardaily.data.PlacementResult
+import com.example.grammardaily.data.ProgressStore
 import com.example.grammardaily.data.Topic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -122,6 +125,37 @@ fun ExerciseItem(
     var whyText by remember(exercise) { mutableStateOf<String?>(null) }
 
     val target = exercise.accepted.firstOrNull() ?: exercise.answer
+
+    // One shared "why is this wrong?" fetch \u2014 used by the button and, when
+    // a fast cloud AI is set up, fired automatically on a wrong answer.
+    val askWhy: () -> Unit = {
+        if (!whyLoading) {
+            whyLoading = true
+            val given = when (exercise.kind) {
+                ExKind.MCQ -> exercise.options.getOrNull(selected) ?: ""
+                ExKind.REORDER -> placedIdx.mapNotNull { exercise.words.getOrNull(it) }.joinToString(" ")
+                else -> typed
+            }
+            val prompt = buildString {
+                append("You are an English teacher. Explain in ONE short sentence, using simple A2-level words, why the learner's answer is wrong. ")
+                append("Exercise: ").append(exercise.prompt)
+                if (exercise.sentence.isNotBlank()) append(" Sentence: ").append(exercise.sentence)
+                append(" Correct answer: ").append(target)
+                append(" Learner's answer: ").append(given.ifBlank { "(empty)" })
+            }
+            scope.launch(Dispatchers.IO) {
+                val reply = AiJudge.askAiBlocking(context, prompt)
+                withContext(Dispatchers.Main) {
+                    whyLoading = false
+                    whyText = reply?.takeIf { it.isNotBlank() }
+                        ?: "The AI could not answer just now \u2014 check the internet or the cloud key, then ask again."
+                }
+            }
+        }
+    }
+    LaunchedEffect(checked, wasCorrect, exercise) {
+        if (checked && !wasCorrect && CloudAi.usableNow(context)) askWhy()
+    }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -257,6 +291,16 @@ fun ExerciseItem(
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onErrorContainer
                                 )
+                                Feedback.diagnose(
+                                    exercise,
+                                    placedIdx.joinToString(" ") { exercise.words[it] }
+                                )?.let { dg ->
+                                    Text(
+                                        text = "\uD83D\uDD0D " + dg,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                }
                                 TextButton(onClick = {
                                     checked = true
                                     wasCorrect = false
@@ -325,6 +369,13 @@ fun ExerciseItem(
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onErrorContainer
                                 )
+                                Feedback.diagnose(exercise, typed)?.let { dg ->
+                                    Text(
+                                        text = "\uD83D\uDD0D " + dg,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                }
                                 if (exercise.hint.isNotBlank()) {
                                     Text(
                                         text = "\uD83D\uDCA1 ${exercise.hint}",
@@ -426,6 +477,18 @@ fun ExerciseItem(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onErrorContainer
                         )
+                        val givenText = when (exercise.kind) {
+                            ExKind.MCQ -> exercise.options.getOrNull(selected) ?: ""
+                            ExKind.REORDER -> placedIdx.mapNotNull { exercise.words.getOrNull(it) }.joinToString(" ")
+                            else -> typed
+                        }
+                        Feedback.diagnose(exercise, givenText)?.let { dg ->
+                            Text(
+                                text = "\uD83D\uDD0D " + dg,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
                         if (exercise.explanation.isNotBlank()) {
                             Text(
                                 text = exercise.explanation,
@@ -440,31 +503,7 @@ fun ExerciseItem(
                                 color = MaterialTheme.colorScheme.onErrorContainer
                             )
                         }
-                        TextButton(onClick = {
-                            if (whyLoading) return@TextButton
-                            whyLoading = true
-                            val given = when (exercise.kind) {
-                                ExKind.MCQ -> exercise.options.getOrNull(selected) ?: ""
-                                ExKind.REORDER -> placedIdx.mapNotNull { exercise.words.getOrNull(it) }
-                                    .joinToString(" ")
-                                else -> typed
-                            }
-                            val prompt = buildString {
-                                append("You are an English teacher. Explain in ONE short sentence, using simple A2-level words, why the learner's answer is wrong. ")
-                                append("Exercise: ").append(exercise.prompt)
-                                if (exercise.sentence.isNotBlank()) append(" Sentence: ").append(exercise.sentence)
-                                append(" Correct answer: ").append(shownCorrect)
-                                append(" Learner's answer: ").append(given.ifBlank { "(empty)" })
-                            }
-                            scope.launch(Dispatchers.IO) {
-                                val reply = AiJudge.askAiBlocking(context, prompt)
-                                withContext(Dispatchers.Main) {
-                                    whyLoading = false
-                                    whyText = reply?.takeIf { it.isNotBlank() }
-                                        ?: "The AI could not answer. Install it from the Laya section on the home screen, then ask again."
-                                }
-                            }
-                        }) {
+                        TextButton(onClick = { askWhy() }) {
                             Text(
                                 text = if (whyLoading) "\uD83E\uDDE0 Asking the AI\u2026"
                                 else "\uD83D\uDCA1 Why? Ask the AI",
@@ -548,6 +587,59 @@ fun ExerciseRunner(
                 text = if (passed) passMessage else failMessage,
                 style = MaterialTheme.typography.bodyMedium
             )
+            val wrongPairs = exercises.zip(results.value).filter { !it.second.correct }
+            if (wrongPairs.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "Look at these again",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        wrongPairs.take(5).forEach { (ex, res) ->
+                            Text(
+                                text = "\u2022 " + ex.prompt.take(80) + "  \u2192  " +
+                                    (ex.accepted.firstOrNull() ?: ex.answer).take(80),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+            }
+            val topics = results.value.map { it.topicId }.distinct()
+                .mapNotNull { ProgressStore.findTopicById(it) }
+            if (topics.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "What this practice taught",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        topics.take(3).forEach { t ->
+                            Text(
+                                text = "\u2022 " + t.title + " \u2014 " +
+                                    t.explanation.take(110).substringBeforeLast(" ") + "\u2026",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+                }
+            }
             Button(
                 onClick = { onDone(results.value, correct, exercises.size) },
                 modifier = Modifier.fillMaxWidth()

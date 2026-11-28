@@ -173,3 +173,23 @@ to speed things up, both optional and additive:
 **Privacy, stated plainly:** while the cloud AI is on, your written answers
 and essays are sent to that provider's servers to be checked. Turn it off
 and nothing ever leaves the phone.
+
+### How answers are checked (v20)
+
+Judging is layered so the small on-device model can never sink a correct
+answer or float a wrong one:
+
+1. **Exact/fuzzy match** — right answers are accepted instantly, no AI.
+2. **Deterministic diagnosis** — pure word-by-word logic says *what* is
+   wrong ("the blank needs different words", "your answer still has the
+   original mistake", "all the words are right but the order is not").
+   Clear-cut wrong answers are settled here; no AI can override them.
+3. **AI judge (Laya)** — only for genuinely open answers (free writing,
+   translations, alternative wordings).
+4. **Safety nets** — a correct answer can never be marked wrong, and a
+   garbled AI reply is reported honestly instead of guessed.
+
+Wrong answers show the diagnosis immediately, and with a cloud AI key set
+a one-sentence "why" explanation is fetched automatically. Every results
+screen ends with a "Look at these again" list of missed items and a "What
+this practice taught" recap.

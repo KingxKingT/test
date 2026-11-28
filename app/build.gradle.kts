@@ -12,8 +12,8 @@ android {
         applicationId = "com.example.grammardaily"
         minSdk = 26
         targetSdk = 35
-        versionCode = 21
-        versionName = "19.1"
+        versionCode = 22
+        versionName = "20.0"
     }
 
     buildTypes {

@@ -461,6 +461,12 @@ object AiJudge {
     fun judgeBlocking(context: Context, exercise: Exercise, given: String): JudgeResult {
         heuristic(context, exercise, given)?.let { return it }
 
+        // Clear, provably wrong answers are settled locally \u2014 the small
+        // on-device model never gets to accept them.
+        if (Feedback.deterministicallyWrong(exercise, given)) {
+            return JudgeResult(false, "", false)
+        }
+
         val canDevice = isModelReady(context) && !isDisabled(context)
         if (!canDevice && !CloudAi.usableNow(context)) {
             return if (exercise.kind == ExKind.WRITE) {
